@@ -330,6 +330,10 @@ python -m prahari.ml.training.evaluate       # metrics + false-negative dossier
 python -m prahari.ml.training.export_onnx    # → models/prahari.onnx (INT8)
 ```
 
+No GPU? The whole pipeline runs unattended on a free Colab T4:
+[**`notebooks/train_on_colab.ipynb`**](./notebooks/train_on_colab.ipynb)
+&nbsp;[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adityacs50-lab/Antardrishti/blob/main/notebooks/train_on_colab.ipynb)
+
 Three decisions worth knowing:
 
 - **Labels come from the generator, not the keyword extractor.** Training on
