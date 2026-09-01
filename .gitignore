@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+*.sqlite3
+
+# ML models (cached locally, not committed)
+models/*
+!models/.gitkeep
+
+# Data
+data/*
+!data/.gitkeep
+# The labelled evaluation set is committed on purpose: everyone must score
+# against the same 3000 records. It is regenerable with
+#   python -m prahari.data.generator --n 3000 --seed 42
+!data/synthetic_reports.jsonl
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Alembic migrations ARE tracked (they are schema history, not build output)
+!backend/alembic/versions/*.py
+
+# Docker
+*.log
+
+# Frontend build output (web/)
+web/dist/
+web/.vite/

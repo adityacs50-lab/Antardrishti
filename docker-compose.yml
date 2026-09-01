@@ -1,0 +1,46 @@
+# prahari — fully offline stack.
+# `docker compose up` must work with the host network disconnected once
+# images are built and ./models is populated. No service here may reach
+# the internet at runtime.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend.Dockerfile
+    container_name: prahari-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/repo/backend
+      - ./models:/repo/models
+      - ./data:/repo/data
+    environment:
+      - PRAHARI_DB_PATH=/repo/data/prahari.db
+      - PRAHARI_MODELS_DIR=/repo/models
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+    networks:
+      - prahari-net
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: ../docker/frontend.Dockerfile
+    # note: dockerfile path is resolved relative to the build context above
+    container_name: prahari-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - prahari-net
+
+networks:
+  prahari-net:
+    driver: bridge

@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  prahari design tokens — dark, industrial, low-chroma.
+
+  Colour choices are not taste. The categorical and highlight hues below were
+  validated with the dataviz palette validator against the card surface
+  (#131A22): lightness band, chroma floor, CVD separation, normal-vision floor
+  and contrast all pass. Do not substitute a hue without re-running it.
+
+  This app renders with the network off: no web fonts, no CDN, no analytics.
+*/
+
+@layer base {
+  :root {
+    --bg: 210 30% 6%;          /* #0B0F14 page plane   */
+    --surface-0: 212 28% 8%;   /* #0E141B sunken       */
+    --surface-1: 211 27% 11%;  /* #131A22 card         */
+    --surface-2: 213 28% 14%;  /* #1A2330 raised       */
+    --border: 212 25% 20%;     /* #243040              */
+    --border-strong: 213 27% 27%;
+    --text-1: 210 24% 93%;     /* #E6EDF3 primary ink  */
+    --text-2: 209 17% 69%;     /* #9FB0C0 secondary    */
+    --text-3: 209 14% 49%;     /* #6B7C8F muted        */
+  }
+
+  * { @apply border-line; }
+
+  html { color-scheme: dark; }
+
+  body {
+    @apply bg-bg text-ink antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Tabular figures wherever numbers must align vertically. */
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--surface-0)); }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border-strong));
+    border-radius: 6px;
+    border: 2px solid hsl(var(--surface-0));
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--text-3)); }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-series-1/70 ring-offset-2 ring-offset-bg;
+  }
+}
+
+@layer components {
+  /* Evidence-span highlighting. Each hue also carries a distinct underline
+     style, so identity never rests on colour alone (CVD / print / forced
+     colours). */
+  .cue {
+    @apply rounded-[3px] px-[2px] py-[1px] transition-colors cursor-default;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .cue-energy {
+    background-color: rgb(57 135 229 / 0.18);
+    border-bottom: 2px solid #3987e5;
+  }
+  .cue-control {
+    background-color: rgb(217 89 38 / 0.18);
+    border-bottom: 2px dashed #d95926;
+  }
+  .cue-context {
+    background-color: rgb(25 158 112 / 0.16);
+    border-bottom: 2px dotted #199e70;
+  }
+  .cue-active {
+    @apply ring-2 ring-ink/40;
+    filter: brightness(1.35);
+  }
+
+  .grid-hairline {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}

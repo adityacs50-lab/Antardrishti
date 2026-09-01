@@ -1,0 +1,73 @@
+[project]
+name = "prahari"
+version = "0.1.0"
+description = "Offline SIF (Serious Injury & Fatality) precursor detection engine for oil & gas safety reports. Neuro-symbolic: ML extracts facts, a deterministic rule engine decides."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = { text = "Proprietary" }
+authors = [
+    { name = "Team prahari" }
+]
+
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.30,<1.0",
+    "pydantic>=2.7,<3.0",
+    "sqlalchemy>=2.0,<3.0",
+    "alembic>=1.13,<2.0",
+    "transformers>=4.42,<5.0",
+    "onnxruntime>=1.18,<2.0",
+    "numpy>=1.26,<2.0",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+prahari-generate = "prahari.data.generator:main"
+prahari = "prahari.cli:main"
+
+[project.optional-dependencies]
+# Inference-time only. Pure CPU, no network: the runtime loads a local ONNX
+# graph and a local tokenizer.json, and falls back to the keyword extractor if
+# either is missing.
+ml = [
+    "onnxruntime>=1.18,<2.0",
+    "tokenizers>=0.19,<1.0",
+    "numpy>=1.26,<2.0",
+]
+# Build-time only, for training and export on a machine with a GPU and a
+# network. Nothing in prahari/ imports these at runtime, and a test fails the
+# build if that ever changes.
+train = [
+    "torch>=2.2",
+    "transformers>=4.42,<5.0",
+    "peft>=0.11,<1.0",
+    "accelerate>=0.30",
+    "onnx>=1.16",
+    "onnxruntime>=1.18,<2.0",
+]
+dev = [
+    "pytest>=8.2,<9.0",
+    "pytest-cov>=5.0,<6.0",
+    "httpx>=0.27,<1.0",
+    "ruff>=0.5,<1.0",
+    "mypy>=1.10,<2.0",
+]
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["prahari*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
