@@ -233,13 +233,23 @@ def evaluate(facts: ExtractedFacts) -> SifVerdict:
     direct_pairs = [p for p in paired if CONTROLS_BY_KEY[p[0]].is_direct]
     chosen_pairs = direct_pairs or paired
 
+    # `direct_control_key` names the failed BARRIER and is surfaced in triage and
+    # in the barrier analytics. It must therefore only ever hold a DIRECT control.
+    # An indirect control that was named is kept separately: it belongs in the rule
+    # trace as context, never in the barrier column, because letting training,
+    # signage or a permit appear there as a failed barrier is precisely the
+    # substitution the three-part direct control test exists to forbid.
     direct_control_key: str | None = None
+    indirect_control_key: str | None = None
     if chosen_pairs:
         # Most degraded among the controls actually described.
         control_key, control_status, status_spans = max(
             chosen_pairs, key=lambda p: _STATUS_SEVERITY[p[1]]
         )
-        direct_control_key = control_key
+        if CONTROLS_BY_KEY[control_key].is_direct:
+            direct_control_key = control_key
+        else:
+            indirect_control_key = control_key
         fired.append(
             RuleFiring(
                 rule_id="R-CTRL-01",
@@ -272,7 +282,9 @@ def evaluate(facts: ExtractedFacts) -> SifVerdict:
     elif status_facts:
         worst = max(status_facts, key=lambda f: _STATUS_SEVERITY[ControlStatus(f.value)])
         control_status = ControlStatus(worst.value)
-        direct_control_key = control_mentions[0].value if control_mentions else None
+        # This branch is only reached when no DIRECT control was mentioned, so any
+        # control named here is indirect by construction.
+        indirect_control_key = control_mentions[0].value if control_mentions else None
         fired.append(
             RuleFiring(
                 rule_id="R-CTRL-05",
@@ -300,18 +312,19 @@ def evaluate(facts: ExtractedFacts) -> SifVerdict:
             )
         )
 
-    control_is_direct = bool(direct_control_key) and CONTROLS_BY_KEY[direct_control_key].is_direct
-    if direct_control_key and not control_is_direct:
+    control_is_direct = direct_control_key is not None
+    if indirect_control_key is not None:
         fired.append(
             RuleFiring(
                 rule_id="R-CTRL-04",
                 description=(
-                    f"The only control named ('{CONTROLS_BY_KEY[direct_control_key].label}') "
+                    f"The only control named ('{CONTROLS_BY_KEY[indirect_control_key].label}') "
                     "is an INDIRECT control and cannot satisfy the three-part direct "
-                    "control test. It does not count towards protection."
+                    "control test. It does not count towards protection, and it is not "
+                    "reported as the failed barrier."
                 ),
                 conclusion="direct_control_present=False",
-                spans=tuple(m.span for m in control_mentions if m.value == direct_control_key),
+                spans=tuple(m.span for m in control_mentions if m.value == indirect_control_key),
                 citation_key=EEI_SCL.key,
             )
         )
