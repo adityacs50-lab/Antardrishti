@@ -9,7 +9,7 @@ safety reports — built for Smart India Hackathon 2026, problem statement
 **PS 26165 (Oil India Limited)**.
 
 [![Offline](https://img.shields.io/badge/network-100%25%20offline-0ca30c?style=flat-square)](#the-offline-guarantee)
-[![Tests](https://img.shields.io/badge/tests-335%20passing-0ca30c?style=flat-square)](#evaluation)
+[![Tests](https://img.shields.io/badge/tests-337%20passing-0ca30c?style=flat-square)](#evaluation)
 [![Accuracy](https://img.shields.io/badge/held--out%20accuracy-83.3%25-3987e5?style=flat-square)](#evaluation)
 [![Python](https://img.shields.io/badge/python-3.11-3987e5?style=flat-square)](#quickstart)
 [![Frontend](https://img.shields.io/badge/React%20%2B%20Vite%20%2B%20TS-3987e5?style=flat-square)](#the-control-room-ui)
@@ -150,7 +150,7 @@ Then **turn the network off** and everything still works. That is the point.
 | `make demo` | One command: build, seed, launch, open `localhost:5173` |
 | `make verify` | Static ban-list scan → model checksums → boot with egress black-holed → assert a real verdict |
 | `make reset` | Clean, seeded, known-good state in under 10 seconds |
-| `make test` | 335 backend tests |
+| `make test` | 337 backend tests |
 | `make doctor` | Preflight: interpreter, deps, ports, DB writability |
 
 <details>
@@ -371,7 +371,7 @@ control *held under load*, which is the subtlest thing in the taxonomy and the
 rarest in the corpus.
 
 ```
-335 passed, 3 skipped in 87.80s
+337 passed, 3 skipped in 23.93s
 ```
 
 The 3 skips are ONNX tests that unlock once a model is trained. The neural
@@ -424,7 +424,7 @@ prahari/
 │   ├── rules/engine.py          # 17 named rules — the only thing that decides
 │   ├── api/                     # 12 endpoints
 │   ├── db/  core/  cli.py
-│   └── tests/                   # 335 tests
+│   └── tests/                   # 337 tests
 └── web/src/                     # React control-room UI, four views
 ```
 
@@ -437,7 +437,7 @@ Built and measured:
 | | |
 |---|---|
 | Backend | 9,984 lines |
-| Tests | 2,040 lines · **335 passing**, 3 skipped |
+| Tests | 2,040 lines · **337 passing**, 3 skipped |
 | Frontend | 2,769 lines across 28 files |
 | Docs &amp; scripts | 1,849 lines |
 | End-to-end accuracy | 83.3% test / 84.2% validation |
