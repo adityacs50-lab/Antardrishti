@@ -267,7 +267,7 @@ HIGH_ENERGY_CUES: tuple[HighEnergyCue, ...] = (
         label="Arc flash",
         basis=CueBasis.CATEGORICAL,
         rationale="EEI HECA: any arc flash exceeds the high-energy threshold.",
-        phrases=("arc flash", "flashover", "arc blast", "short circuit blast" "arc", "flash",),
+        phrases=("arc flash", "flashover", "arc blast", "short circuit blast", "arc", "flash",),
         citations=(EEI_HECA,),
     ),
     # -- PRESSURE ---------------------------------------------------------
@@ -362,7 +362,7 @@ HIGH_ENERGY_CUES: tuple[HighEnergyCue, ...] = (
             "EEI SCL: any circumstance with the release of steam exceeds the "
             "high-energy threshold."
         ),
-        phrases=("steam release", "steam out", "live steam", "steam leak" "steam",),
+        phrases=("steam release", "steam out", "live steam", "steam leak", "steam",),
         citations=(EEI_SCL, EEI_HECA),
     ),
     HighEnergyCue(
@@ -389,7 +389,7 @@ HIGH_ENERGY_CUES: tuple[HighEnergyCue, ...] = (
         label="Explosion",
         basis=CueBasis.CATEGORICAL,
         rationale="EEI HECA: most incidents described as an explosion exceed the threshold.",
-        phrases=("explosion", "exploded", "blast", "detonation", "bleve", "vapour cloud explosion" "flashback", "blew out", "blew off",),
+        phrases=("explosion", "exploded", "blast", "detonation", "bleve", "vapour cloud explosion", "flashback", "blew out", "blew off",),
         citations=(EEI_HECA,),
     ),
     # -- CHEMICAL ---------------------------------------------------------

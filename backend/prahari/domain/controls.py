@@ -162,7 +162,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "A compliant guardrail removes the exposure entirely and keeps "
             "working whether or not the worker is paying attention."
         ),
-        phrases=("guardrail", "guard rail", "handrail", "edge protection", "railing" "toe board", "barrier on the platform", "guardrail was provided", "scaffold",),
+        phrases=("guardrail", "guard rail", "handrail", "edge protection", "railing", "toe board", "barrier on the platform", "guardrail was provided", "scaffold",),
         citations=(EEI_SCL, INGAA_HEHC_2024),
     ),
     ControlDefinition(
@@ -192,7 +192,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.GRAVITY,
         control_class=ControlClass.DIRECT_ABSOLUTE,
         rationale="A secured cover removes the opening; it does not depend on attention.",
-        phrases=("hole cover", "floor cover", "covered the opening", "grating secured" "cover plate", "grating",),
+        phrases=("hole cover", "floor cover", "covered the opening", "grating secured", "cover plate", "grating",),
         citations=(EEI_SCL,),
     ),
     ControlDefinition(
@@ -228,7 +228,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "and rollover: reinforced cabin, brush guards, rollover "
             "protection, seatbelt restraint."
         ),
-        phrases=("rops", "fops", "rollover protection", "reinforced cabin", "brush guard" "cab protection", "seat restraint", "rops/fops", "cab guard", "rollover",),
+        phrases=("rops", "fops", "rollover protection", "reinforced cabin", "brush guard", "cab protection", "seat restraint", "rops/fops", "cab guard", "rollover",),
         citations=(INGAA_HEHC_2024,),
     ),
     ControlDefinition(
@@ -242,7 +242,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "they function during the event regardless of the error that "
             "caused it."
         ),
-        phrases=("seat belt", "seatbelt", "airbag", "rollover frame", "restraint" "occupant restraint",),
+        phrases=("seat belt", "seatbelt", "airbag", "rollover frame", "restraint", "occupant restraint",),
         citations=(EEI_SCL, INGAA_HEHC_2024),
     ),
     ControlDefinition(
@@ -255,7 +255,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "sharp distinction from soft barricade tape and fencing, which "
             "INGAA classes as 'Other Controls' and which are NOT direct."
         ),
-        phrases=("concrete barrier", "jersey barrier", "hard barrier", "crash barrier" "hard barricade",),
+        phrases=("concrete barrier", "jersey barrier", "hard barrier", "crash barrier", "hard barricade",),
         citations=(EEI_SCL, INGAA_HEHC_2024),
     ),
     ControlDefinition(
@@ -264,7 +264,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.MOTION,
         control_class=ControlClass.DIRECT_ABSOLUTE,
         rationale="INGAA's named direct control for struck-by from pipe rolling on supports.",
-        phrases=("cribbing", "blocking", "chocked", "wedges", "pipe stopper" "chock",),
+        phrases=("cribbing", "blocking", "chocked", "wedges", "pipe stopper", "chock",),
         citations=(INGAA_HEHC_2024,),
     ),
     # -- MECHANICAL -------------------------------------------------------
@@ -277,7 +277,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "EEI names machine guarding as a direct control. A fixed guard "
             "keeps the body out of the rotating part regardless of attention."
         ),
-        phrases=("machine guard", "guard fitted", "coupling guard", "belt guard", "caging" "guard", "tong guard", "snub line", "hands-off", "hands-free",),
+        phrases=("machine guard", "guard fitted", "coupling guard", "belt guard", "caging", "guard", "tong guard", "snub line", "hands-off", "hands-free",),
         citations=(EEI_SCL, INGAA_HEHC_2024),
     ),
     ControlDefinition(
@@ -291,7 +291,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "zero energy. An unverified isolation is PRESENT_UNVERIFIED, not a "
             "working direct control."
         ),
-        phrases=("lockout", "loto", "locked and tagged", "zero energy verified", "de-energised" "isolation", "isolated", "brake applied",),
+        phrases=("lockout", "loto", "locked and tagged", "zero energy verified", "de-energised", "isolation", "isolated", "brake applied",),
         citations=(EEI_SCL, EEI_HECA),
     ),
     ControlDefinition(
@@ -300,7 +300,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.MECHANICAL,
         control_class=ControlClass.DIRECT_MITIGATING,
         rationale="INGAA names torque limiter devices and emergency stop functions as direct.",
-        phrases=("emergency stop", "e-stop", "torque limiter", "kill switch", "chain brake" "load limiter",),
+        phrases=("emergency stop", "e-stop", "torque limiter", "kill switch", "chain brake", "load limiter",),
         citations=(INGAA_HEHC_2024,),
     ),
     # -- ELECTRICAL -------------------------------------------------------
@@ -335,7 +335,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "cable as the direct controls where de-energisation is not "
             "practicable, e.g. live overhead transmission lines."
         ),
-        phrases=("insulated boom", "insulating guard", "line cover up", "insulated cable" "insulated",),
+        phrases=("insulated boom", "insulating guard", "line cover up", "insulated cable", "insulated",),
         citations=(INGAA_HEHC_2024, EEI_SCL),
     ),
     ControlDefinition(
@@ -344,7 +344,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.ELECTRICAL,
         control_class=ControlClass.DIRECT_MITIGATING,
         rationale="INGAA names equipment grounding as the direct control for welding shock.",
-        phrases=("earthing", "earthed", "grounded", "bonding", "elcb", "rcd" "earth",),
+        phrases=("earthing", "earthed", "grounded", "bonding", "elcb", "rcd", "earth",),
         citations=(INGAA_HEHC_2024, OISD_STD_216),
     ),
     # -- PRESSURE ---------------------------------------------------------
@@ -378,7 +378,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "Elimination of the energy rather than protection from it. The "
             "verification step is the direct part."
         ),
-        phrases=("depressurised", "depressurized", "bled down", "vented to flare", "drained" "cooled",),
+        phrases=("depressurised", "depressurized", "bled down", "vented to flare", "drained", "cooled",),
         citations=(EEI_SCL,),
     ),
     ControlDefinition(
@@ -420,7 +420,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.PRESSURE,
         control_class=ControlClass.DIRECT_ABSOLUTE,
         rationale="Both EEI and INGAA name benching, sloping and trench boxes as the direct control.",
-        phrases=("trench box", "shoring", "shored", "benching", "sloped", "sheet piling" "sloping", "benched",),
+        phrases=("trench box", "shoring", "shored", "benching", "sloped", "sheet piling", "sloping", "benched",),
         citations=(EEI_HECA, INGAA_HEHC_2024),
     ),
     # -- TEMPERATURE ------------------------------------------------------
@@ -435,7 +435,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "high-temperature pipeline tasks - a narrow, energy-specific PPE "
             "exception, not a general licence to count PPE."
         ),
-        phrases=("welding blanket", "thermal insulation", "lagging", "heat shield", "fire blanket" "insulation", "thermal insulated gloves",),
+        phrases=("welding blanket", "thermal insulation", "lagging", "heat shield", "fire blanket", "insulation", "thermal insulated gloves",),
         citations=(EEI_SCL, INGAA_HEHC_2024),
     ),
     ControlDefinition(
@@ -478,7 +478,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "toxic exposure. It works on the atmosphere itself rather than "
             "relying on the worker."
         ),
-        phrases=("forced ventilation", "air mover", "eductor", "purged and ventilated", "extraction" "ventilation", "blower",),
+        phrases=("forced ventilation", "air mover", "eductor", "purged and ventilated", "extraction", "ventilation", "blower",),
         citations=(EEI_HECA, INGAA_HEHC_2024),
     ),
     ControlDefinition(
@@ -493,7 +493,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "monitoring, an attendant and a rescue plan; a cartridge mask in "
             "an IDLH atmosphere is not a direct control."
         ),
-        phrases=("scba", "breathing apparatus", "airline respirator", "escape set", "supplied air" "gas monitor", "personal monitor", "personal gas monitor", "standby man", "attendant", "wind sock",),
+        phrases=("scba", "breathing apparatus", "airline respirator", "escape set", "supplied air", "gas monitor", "personal monitor", "personal gas monitor", "standby man", "attendant", "wind sock",),
         citations=(EEI_HECA, PRAHARI_MODELLING),
     ),
     ControlDefinition(
@@ -502,7 +502,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.CHEMICAL,
         control_class=ControlClass.DIRECT_ABSOLUTE,
         rationale="Elimination: the substance is not present to be exposed to.",
-        phrases=("positive isolation", "purged with nitrogen", "line cleared", "flushed and purged" "blinded",),
+        phrases=("positive isolation", "purged with nitrogen", "line cleared", "flushed and purged", "blinded",),
         citations=(EEI_SCL,),
     ),
     # -- BIOLOGICAL -------------------------------------------------------
@@ -516,7 +516,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "biological control that meets limb (c) - it works whether or not "
             "the worker is looking where they step."
         ),
-        phrases=("vegetation cleared", "sealed enclosure", "snake guard", "mesh screen", "gaiters" "vegetation", "pit was covered",),
+        phrases=("vegetation cleared", "sealed enclosure", "snake guard", "mesh screen", "gaiters", "vegetation", "pit was covered",),
         citations=(PRAHARI_MODELLING,),
     ),
     ControlDefinition(
@@ -530,7 +530,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "mitigates the outcome independently of the worker's actions. "
             "prahari modelling decision."
         ),
-        phrases=("antivenom", "anti venom", "medevac", "ambulance on site", "evacuation plan tested" "ambulance", "evacuation", "anti-snake venom",),
+        phrases=("antivenom", "anti venom", "medevac", "ambulance on site", "evacuation plan tested", "ambulance", "evacuation", "anti-snake venom",),
         citations=(PRAHARI_MODELLING,),
     ),
     # -- RADIATION --------------------------------------------------------
@@ -543,7 +543,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "INGAA: equipment-specific direct controls are built into all "
             "radiography equipment - lead shielding, mechanical failsafes."
         ),
-        phrases=("lead shielding", "collimator", "mechanical failsafe", "interlock", "source shielded" "camera", "shielded position", "crimp", "radiography equipment", "failsafe",),
+        phrases=("lead shielding", "collimator", "mechanical failsafe", "interlock", "source shielded", "camera", "shielded position", "crimp", "radiography equipment", "failsafe",),
         citations=(INGAA_HEHC_2024,),
     ),
     ControlDefinition(
@@ -556,7 +556,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "the failure mode that kills radiographers: an unretracted source "
             "that nobody noticed."
         ),
-        phrases=("survey meter", "radiation survey", "source confirmed retracted", "dose rate checked" "tld badge", "cordon",),
+        phrases=("survey meter", "radiation survey", "source confirmed retracted", "dose rate checked", "tld badge", "cordon",),
         citations=(INGAA_HEHC_2024, PRAHARI_MODELLING),
     ),
     ControlDefinition(
@@ -565,7 +565,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=EnergySource.RADIATION,
         control_class=ControlClass.DIRECT_MITIGATING,
         rationale="INGAA names welding curtains and welding helmets as the direct control for arc flash UV.",
-        phrases=("welding curtain", "welding screen", "welding helmet", "arc screen" "welding shield",),
+        phrases=("welding curtain", "welding screen", "welding helmet", "arc screen", "welding shield",),
         citations=(INGAA_HEHC_2024,),
     ),
     # -- SOUND ------------------------------------------------------------
@@ -579,7 +579,7 @@ DIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "protection depends on being worn correctly and so does not. "
             "prahari modelling decision."
         ),
-        phrases=("acoustic enclosure", "silencer", "noise hood", "attenuator", "acoustic lagging" "enclosure",),
+        phrases=("acoustic enclosure", "silencer", "noise hood", "attenuator", "acoustic lagging", "enclosure",),
         citations=(PRAHARI_MODELLING,),
     ),
 )
@@ -596,7 +596,7 @@ INDIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
         energy_source=None,
         control_class=ControlClass.INDIRECT,
         rationale="EEI: training is susceptible to unintentional human error. Fails limb (c).",
-        phrases=("trained", "training", "induction", "competency", "certified operator", "refresher" "manual handling training",),
+        phrases=("trained", "training", "induction", "competency", "certified operator", "refresher", "manual handling training",),
         citations=(EEI_SCL, EEI_HECA),
     ),
     ControlDefinition(
@@ -667,7 +667,7 @@ INDIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "barrier, which IS direct - the distinction is whether it stops "
             "the energy or merely marks where it is."
         ),
-        phrases=("barricade", "barricading", "caution tape", "cordoned", "exclusion zone", "fencing" "barricaded",),
+        phrases=("barricade", "barricading", "caution tape", "cordoned", "exclusion zone", "fencing", "barricaded",),
         citations=(INGAA_HEHC_2024,),
     ),
     ControlDefinition(
@@ -691,7 +691,7 @@ INDIRECT_CONTROLS: tuple[ControlDefinition, ...] = (
             "arc-rated and thermal-specific clothing, welding helmets and "
             "supplied-air respiratory protection."
         ),
-        phrases=("hard hat", "helmet", "safety shoes", "safety boots", "gloves", "coverall", "goggles", "ppe worn" "ear muff", "ear plug", "safety shoe", "anti-skid", "repellent", "padding",),
+        phrases=("hard hat", "helmet", "safety shoes", "safety boots", "gloves", "coverall", "goggles", "ppe worn", "ear muff", "ear plug", "safety shoe", "anti-skid", "repellent", "padding",),
         citations=(EEI_SCL, EEI_HECA),
     ),
     ControlDefinition(
