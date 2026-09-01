@@ -61,27 +61,34 @@
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
-  .cue-energy {
-    background-color: rgb(57 135 229 / 0.18);
-    border-bottom: 2px solid #3987e5;
-  }
-  .cue-control {
-    background-color: rgb(217 89 38 / 0.18);
-    border-bottom: 2px dashed #d95926;
-  }
-  .cue-context {
-    background-color: rgb(25 158 112 / 0.16);
-    border-bottom: 2px dotted #199e70;
-  }
-  .cue-active {
-    @apply ring-2 ring-ink/40;
-    filter: brightness(1.35);
-  }
-
   .grid-hairline {
     background-image:
       linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
     background-size: 32px 32px;
   }
+}
+
+/* Evidence-span colours live OUTSIDE @layer components deliberately.
+   HighlightedReport builds these class names dynamically (`cue-${kind}`), so
+   Tailwind's content scanner never sees the literal strings "cue-energy",
+   "cue-control" or "cue-context" and purges them out of the components layer.
+   The spans then render with no colour at all - which silently breaks the one
+   screen the whole product is pitched on. Plain top-level CSS is emitted
+   verbatim and cannot be purged. Do not move these back into a @layer. */
+.cue-energy {
+  background-color: rgb(57 135 229 / 0.18);
+  border-bottom: 2px solid #3987e5;
+}
+.cue-control {
+  background-color: rgb(217 89 38 / 0.18);
+  border-bottom: 2px dashed #d95926;
+}
+.cue-context {
+  background-color: rgb(25 158 112 / 0.16);
+  border-bottom: 2px dotted #199e70;
+}
+.cue-active {
+  box-shadow: 0 0 0 2px rgb(233 237 241 / 0.4);
+  filter: brightness(1.35);
 }
