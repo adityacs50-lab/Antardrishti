@@ -5,7 +5,20 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { api, ApiError } from "@/lib/api";
+import { chunkUploadFile } from "@/lib/chunkUpload";
 import type { BulkResult } from "@/types/api";
+
+function mergeResults(a: BulkResult, b: BulkResult): BulkResult {
+  const counts: Record<string, number> = { ...a.classification_counts };
+  for (const [k, v] of Object.entries(b.classification_counts)) counts[k] = (counts[k] ?? 0) + v;
+  return {
+    received: a.received + b.received,
+    ingested: a.ingested + b.ingested,
+    skipped: a.skipped + b.skipped,
+    errors: [...a.errors, ...b.errors],
+    classification_counts: counts,
+  };
+}
 
 interface Props {
   onImported: () => void;
@@ -29,6 +42,7 @@ interface Props {
 export function BulkImportDialog({ onImported }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string>();
   const [error, setError] = useState<string>();
   const [result, setResult] = useState<BulkResult>();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -42,20 +56,35 @@ export function BulkImportDialog({ onImported }: Props) {
     setBusy(true);
     setError(undefined);
     setResult(undefined);
+    setProgress(undefined);
     try {
-      const res = await api.bulkImport(file);
-      setResult(res);
-      if (res.ingested > 0) onImported();
+      // Vercel's functions hard-cap a request body at 4.5 MB (not
+      // configurable) - a real export can easily cross that. Chunking here
+      // means the person never has to know or care; each chunk is a
+      // complete, independently-valid CSV/JSONL document.
+      const chunks = await chunkUploadFile(file);
+      let combined: BulkResult | undefined;
+      for (let i = 0; i < chunks.length; i++) {
+        if (chunks.length > 1) setProgress(`Importing part ${i + 1} of ${chunks.length}…`);
+        const chunkFile = new File([chunks[i].blob], chunks[i].name);
+        const res = await api.bulkImport(chunkFile);
+        combined = combined ? mergeResults(combined, res) : res;
+        setResult(combined);
+      }
+      if (combined && combined.ingested > 0) onImported();
     } catch (err) {
       setError(
         err instanceof ApiError
-          ? err.message
+          ? err.status === 413
+            ? "That file is still too large even after splitting it — try a smaller export."
+            : err.message
           : err instanceof Error
             ? err.message
             : "Could not import that file.",
       );
     } finally {
       setBusy(false);
+      setProgress(undefined);
       if (fileInput.current) fileInput.current.value = "";
     }
   };
@@ -109,7 +138,7 @@ export function BulkImportDialog({ onImported }: Props) {
             disabled={busy}
           >
             {busy ? <Loader2 className="animate-spin" /> : <UploadCloud />}
-            {busy ? "Importing…" : "Choose file…"}
+            {busy ? (progress ?? "Importing…") : "Choose file…"}
           </Button>
 
           {error && (
