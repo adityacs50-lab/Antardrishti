@@ -3,7 +3,7 @@
   "framework": null,
   "buildCommand": "cd web && npm install && npm run build",
   "functions": {
-    "server.py": {
+    "api/index.py": {
       "maxDuration": 30
     }
   }
