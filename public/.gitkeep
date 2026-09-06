@@ -1,0 +1,1 @@
+Vercel requires a discoverable, non-empty output directory even though this app is served entirely by api/index.py via vercel.json's catch-all rewrite. This file must NOT be named index.html: Vercel serves an exact-matching static file for a path before rewrites ever run, so an index.html here would shadow / and prevent it from ever reaching the FastAPI app.
