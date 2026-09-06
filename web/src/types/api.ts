@@ -170,6 +170,20 @@ export interface AccumulationOut {
   as_of: string; cells: AccumulationCell[];
 }
 
+export interface ReportSubmitPayload {
+  text: string;
+  site: string;
+  date: string;
+  reporter_role?: string;
+  activity?: string;
+}
+
+export interface IngestResult {
+  id: number;
+  report_uid: string;
+  verdict: SIFVerdict;
+}
+
 export interface ReviewPayload {
   reviewer_role: string;
   decision: "confirm" | "override";

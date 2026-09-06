@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { ClassificationBadge, ConfidencePill, ControlBadge, LsrBadge } from "@/components/Chips";
+import { NewReportDialog } from "@/components/NewReportDialog";
 import { QueryBoundary } from "@/components/StateViews";
 import { LiveAnalysisPanel } from "./LiveAnalysisPanel";
 import { api } from "@/lib/api";
@@ -84,15 +85,22 @@ export function TriageView() {
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       <section className="space-y-3">
-        <header className="space-y-1">
-          <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
-            <TriangleAlert className="size-5 text-status-serious" />
-            Triage Queue
-          </h1>
-          <p className="text-xs text-ink-muted">
-            Uncontrolled fatal potential, ranked highest first. Nobody was necessarily hurt in any
-            of these — that is the point.
-          </p>
+        <header className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
+              <TriangleAlert className="size-5 text-status-serious" />
+              Triage Queue
+            </h1>
+            <p className="text-xs text-ink-muted">
+              Uncontrolled fatal potential, ranked highest first. Nobody was necessarily hurt in any
+              of these — that is the point.
+            </p>
+          </div>
+          <NewReportDialog
+            sites={meta.data?.sites ?? []}
+            activities={meta.data?.activities ?? []}
+            onSubmitted={() => { triage.refetch(); meta.refetch(); }}
+          />
         </header>
 
         <Card>

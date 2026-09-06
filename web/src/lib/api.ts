@@ -13,8 +13,8 @@
  */
 
 import type {
-  AccumulationOut, AnalyzeResult, BarriersOut, DensityOut, LsrOut, Meta,
-  Page, ReportDetail, ReportSummary, ReviewPayload, SifClassification,
+  AccumulationOut, AnalyzeResult, BarriersOut, DensityOut, IngestResult, LsrOut, Meta,
+  Page, ReportDetail, ReportSubmitPayload, ReportSummary, ReviewPayload, SifClassification,
   EnergySource, LifeSavingRule,
 } from "@/types/api";
 
@@ -104,6 +104,21 @@ export const api = {
   reports: (p: ReportFilters = {}) => request<Page<ReportSummary>>(`/api/reports${qs(p)}`),
 
   report: (id: number) => request<ReportDetail>(`/api/reports/${id}`),
+
+  /**
+   * Persist a new report: extract facts, run the rule engine, store it, and
+   * return the verdict — this is Zone 1 of the pitch ("Report Comes In").
+   * Unlike `analyze`, this one lands in the Triage Queue. Whether it shows up
+   * there depends on the engine's own classification (PSIF/Exposure only,
+   * unless the queue's "include actual events" filter is on) — that is by
+   * design, not a bug in this call.
+   */
+  submit: (payload: ReportSubmitPayload) =>
+    request<IngestResult>("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
 
   analyze: (text: string) =>
     request<AnalyzeResult>("/api/analyze", {
