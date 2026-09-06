@@ -6,7 +6,7 @@
   "functions": {
     "api/index.py": {
       "maxDuration": 30,
-      "includeFiles": "web/dist/**"
+      "includeFiles": "{web/dist/**,data/demo_seed.db}"
     }
   },
   "rewrites": [

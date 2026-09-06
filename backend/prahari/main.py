@@ -50,9 +50,85 @@ def _maybe_seed_cloud_db() -> None:
         seed(700, None, 42, 240, True)
 
 
+def _maybe_restore_demo_corpus() -> None:
+    """Populate an empty ephemeral database from the corpus shipped in the repo.
+
+    A serverless deployment with no DATABASE_URL gets a brand-new, empty SQLite
+    file on every cold start - the bundle itself is read-only, so the database
+    lands in the platform's temp directory and dies with the instance. The
+    queue, the map and the accumulation index then all render "no data" no
+    matter what was submitted a minute earlier, which reads as a broken app
+    rather than an empty one. Copying the pre-built corpus in on startup makes
+    a deployed demo populated on arrival with no hosted database and no
+    dashboard configuration - the one thing a cloud deployment cannot do for
+    itself, since it has no shell to run `prahari.cli seed` from.
+
+    Deliberately narrow:
+      * never when DATABASE_URL is set - that path has its own seeding, and a
+        real hosted database must never be overwritten by a demo fixture;
+      * never when the database already holds even one report, so it cannot
+        clobber a real corpus or a developer's local work;
+      * only when the shipped file is actually present in the configured data
+        directory. The test suite points PRAHARI_DATA_DIR at an empty tmp_path,
+        so tests never see it and keep their fresh, empty databases;
+      * PRAHARI_NO_DEMO_SEED=1 opts out entirely.
+
+    What gets loaded is the project's own synthetic corpus, already scored by
+    the real rule engine at build time - the same `prahari.cli seed` output a
+    local `make demo` produces. These are not fabricated verdicts: every row
+    came out of the same rules that score anything typed into the app, which
+    is why this does not violate the no-mock-data rule the UI is built on.
+    """
+    if os.environ.get("DATABASE_URL") or os.environ.get("PRAHARI_NO_DEMO_SEED"):
+        return
+
+    import shutil
+    from datetime import date as _date
+
+    from sqlalchemy import func, select, text
+
+    from prahari.core.config import get_settings
+    from prahari.db.models import Report
+    from prahari.db.session import create_all, reset_engine, resolved_db_path, session_scope
+
+    seed_file = get_settings().data_dir / "demo_seed.db"
+    target = resolved_db_path()
+    if not seed_file.exists() or not target:
+        return
+
+    with session_scope() as db:
+        if (db.scalar(select(func.count()).select_from(Report)) or 0) > 0:
+            return
+
+    # Swap the file out from under a disposed engine, then reopen on the copy.
+    reset_engine()
+    shutil.copyfile(seed_file, target)
+    create_all()
+
+    # The corpus was dated relative to the day it was built, but the
+    # accumulation index is a rolling-window measure - left alone, the whole
+    # corpus would drift out of every window and the map would empty itself
+    # again a few months from now. Shift every date so the newest report lands
+    # on today, preserving the relative spacing the clustering depends on.
+    # SQLite-specific by design: this whole function returns early unless the
+    # deployment is on the local SQLite path.
+    with session_scope() as db:
+        newest = db.scalar(select(func.max(Report.report_date)))
+        if not newest:
+            return
+        shift = (_date.today() - newest).days
+        if shift:
+            delta = f"{shift:+d} days"
+            db.execute(text("UPDATE reports SET report_date = date(report_date, :d)"), {"d": delta})
+            db.execute(
+                text("UPDATE reports SET ingested_at = datetime(ingested_at, :d)"), {"d": delta}
+            )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ANN201
     create_all()
+    _maybe_restore_demo_corpus()
     _maybe_seed_cloud_db()
     # Judges should be able to see which extraction path is live without
     # opening a terminal tab or trusting a claim on a slide.

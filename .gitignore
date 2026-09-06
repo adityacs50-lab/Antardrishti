@@ -23,6 +23,11 @@ data/*
 # against the same 3000 records. It is regenerable with
 #   python -m prahari.data.generator --n 3000 --seed 42
 !data/synthetic_reports.jsonl
+# The pre-scored demo corpus. Committed on purpose: a cloud deployment has no
+# shell to run `prahari.cli seed` from, so without this the deployed queue is
+# permanently empty. Rebuild with:
+#   PRAHARI_DB_PATH=data/demo_seed.db python -m prahari.cli seed --limit 700
+!data/demo_seed.db
 
 # Node / frontend
 node_modules/
