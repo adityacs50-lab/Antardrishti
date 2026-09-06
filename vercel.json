@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "cd web && npm install && npm run build",
+  "functions": {
+    "server.py": {
+      "maxDuration": 30
+    }
+  }
+}

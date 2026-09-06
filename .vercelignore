@@ -1,0 +1,8 @@
+web/node_modules
+docker/
+notebooks/
+.pytest_cache/
+backend/tests/
+screenshots/
+*.pyc
+__pycache__/

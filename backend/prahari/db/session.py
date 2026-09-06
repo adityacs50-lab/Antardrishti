@@ -1,4 +1,4 @@
-"""Engine and session management. SQLite, file-based, in the repo."""
+"""Engine and session management. SQLite by default; Postgres when DATABASE_URL is set."""
 
 from __future__ import annotations
 
@@ -64,6 +64,11 @@ def _fallback_db_path(original: Path) -> Path:
 
 
 def _configure(engine: Engine) -> None:
+    if engine.dialect.name != "sqlite":
+        # Postgres (or anything else) needs none of the SQLite-specific
+        # pragma dance below — it has real concurrent-write support already.
+        return
+
     @event.listens_for(engine, "connect")
     def _set_pragmas(dbapi_conn, _record):  # noqa: ANN001
         """Set pragmas, tolerating filesystems that cannot do WAL.
@@ -96,6 +101,7 @@ def get_engine(url: str | None = None) -> Engine:
     if _engine is None or url is not None:
         settings = get_settings()
         target = url or settings.database_url
+        connect_args: dict[str, object] = {}
         if target.startswith("sqlite:///") and not target.endswith(":memory:"):
             db_path = Path(target[len("sqlite:///") :])
             db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -113,7 +119,8 @@ def get_engine(url: str | None = None) -> Engine:
                 db_path = alternative
             if url is None:
                 _resolved_db_path = str(db_path)
-        engine = create_engine(target, future=True, connect_args={"check_same_thread": False})
+            connect_args = {"check_same_thread": False}
+        engine = create_engine(target, future=True, connect_args=connect_args)
         _configure(engine)
         if url is not None:
             return engine

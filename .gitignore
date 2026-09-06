@@ -52,3 +52,4 @@ Thumbs.db
 # Frontend build output (web/)
 web/dist/
 web/.vite/
+screenshots/
