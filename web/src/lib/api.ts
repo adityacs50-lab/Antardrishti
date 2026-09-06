@@ -13,9 +13,9 @@
  */
 
 import type {
-  AccumulationOut, AnalyzeResult, BarriersOut, DensityOut, IngestResult, LsrOut, Meta,
-  Page, ReportDetail, ReportSubmitPayload, ReportSummary, ReviewPayload, SifClassification,
-  EnergySource, LifeSavingRule,
+  AccumulationOut, AnalyzeResult, BarriersOut, BulkResult, DensityOut, ExtractedText,
+  IngestResult, LsrOut, Meta, Page, ReportDetail, ReportSubmitPayload, ReportSummary,
+  ReviewPayload, SifClassification, EnergySource, LifeSavingRule,
 } from "@/types/api";
 
 const BASE = (import.meta.env?.VITE_API_BASE_URL as string | undefined) ?? "";
@@ -119,6 +119,24 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }),
+
+  /**
+   * Pull plain text out of an uploaded PDF/.txt for the report-entry form.
+   * Purely a convenience — nothing is saved or analysed until that text is
+   * actually submitted via `api.submit`.
+   */
+  extractText: (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request<ExtractedText>("/api/extract-text", { method: "POST", body });
+  },
+
+  /** Bulk-ingest a CSV or JSONL export — each row runs through the real engine and persists. */
+  bulkImport: (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request<BulkResult>("/api/reports/bulk", { method: "POST", body });
+  },
 
   analyze: (text: string) =>
     request<AnalyzeResult>("/api/analyze", {

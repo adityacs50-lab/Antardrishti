@@ -167,6 +167,29 @@ def persist(
     return report
 
 
+def extract_pdf_text(raw: bytes) -> str:
+    """Pull the text layer out of a PDF for the report-entry form.
+
+    No OCR: a scanned page with no embedded text layer yields nothing, and
+    the caller (the /api/extract-text route) turns that into a clear error
+    rather than silently returning an empty report. pypdf is imported lazily
+    so an environment that never uses this endpoint (tests, the CLI, a bare
+    `make api`) never needs it installed to import this module at all - the
+    same fail-closed pattern as prahari.ml.neural_extractor's optional
+    onnxruntime/tokenizers imports.
+    """
+    from pypdf import PdfReader
+
+    reader = PdfReader(io.BytesIO(raw))
+    pages: list[str] = []
+    for page in reader.pages:
+        try:
+            pages.append(page.extract_text() or "")
+        except Exception:  # noqa: BLE001 — one malformed page must not fail the whole upload
+            continue
+    return "\n\n".join(p for p in pages if p.strip())
+
+
 def parse_upload(filename: str, raw: bytes) -> list[dict]:
     """Parse a JSONL or CSV upload into ingest dicts. Never touches the network."""
     text = raw.decode("utf-8-sig", errors="replace")

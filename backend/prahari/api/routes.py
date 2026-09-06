@@ -18,6 +18,7 @@ from prahari.api.schemas import (
     BulkResult,
     DensityOut,
     EvidenceSpanOut,
+    ExtractedTextOut,
     IngestResult,
     LsrOut,
     Page,
@@ -29,7 +30,7 @@ from prahari.api.schemas import (
     RuleFiringOut,
     SIFVerdictOut,
 )
-from prahari.api.service import parse_upload, persist, triage_rank, verdict_reason
+from prahari.api.service import extract_pdf_text, parse_upload, persist, triage_rank, verdict_reason
 from prahari.ml.extractor import EXTRACTOR_VERSION
 from prahari.rules.engine import ENGINE_VERSION, analyse
 from prahari.db.models import Report, Review, Verdict
@@ -222,6 +223,45 @@ def meta(db: Session = Depends(get_db)) -> MetaOut:
         engine_version=ENGINE_VERSION,
         extractor_version=EXTRACTOR_VERSION,
         report_count=db.scalar(select(func.count()).select_from(Report)) or 0,
+    )
+
+
+@router.post("/extract-text", response_model=ExtractedTextOut)
+async def extract_text(file: UploadFile = File(...)) -> ExtractedTextOut:
+    """Pull plain text out of an uploaded PDF or .txt file for the report-entry form.
+
+    A convenience for an officer attaching a typed or exported report instead
+    of retyping it — this never persists or analyses anything by itself.
+    Text-layer PDFs only: there is no OCR here, so a scanned image with no
+    embedded text layer yields nothing (and this says so explicitly, rather
+    than silently handing back an empty report to submit).
+    """
+    name = (file.filename or "").lower()
+    raw = await file.read()
+    if name.endswith(".pdf"):
+        try:
+            text = extract_pdf_text(raw)
+        except ImportError as exc:
+            raise HTTPException(
+                status.HTTP_501_NOT_IMPLEMENTED, "PDF support is not installed on this server."
+            ) from exc
+        except Exception as exc:  # noqa: BLE001 — a corrupt upload must not 500
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"could not read PDF: {exc}") from exc
+    elif name.endswith(".txt"):
+        text = raw.decode("utf-8-sig", errors="replace")
+    else:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Only .pdf and .txt files are supported.")
+
+    text = text.strip()
+    if not text:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "No extractable text found in that file — a scanned/image-only PDF has no text layer "
+            "to read without OCR, which this prototype does not do. Try pasting the text directly.",
+        )
+    max_chars = 20000  # matches ReportIn.text's max_length
+    return ExtractedTextOut(
+        filename=file.filename or "upload", text=text[:max_chars], truncated=len(text) > max_chars
     )
 
 

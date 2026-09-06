@@ -1,0 +1,156 @@
+import { useRef, useState } from "react";
+import { Loader2, UploadCloud } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { api, ApiError } from "@/lib/api";
+import type { BulkResult } from "@/types/api";
+
+interface Props {
+  onImported: () => void;
+}
+
+/**
+ * Bulk-ingest an existing corpus — a CSV or JSONL export of OIL's own
+ * reports, one row per report — through the already-working
+ * POST /api/reports/bulk endpoint. That endpoint has existed since early in
+ * the project (it backs `prahari.cli seed`) but nothing in the UI ever
+ * called it; this is the only place a human can drive it without a
+ * terminal, which matters once the app is deployed somewhere with no shell
+ * (Vercel) and someone other than the person who wrote the code needs to
+ * load a real corpus.
+ *
+ * Expected shape per row: {text, site, date, activity?, reporter_role?,
+ * report_uid?} — a CSV needs those as column headers; JSONL is one such
+ * object per line (the synthetic-corpus shape with nested metadata is also
+ * accepted, per parse_upload's docstring).
+ */
+export function BulkImportDialog({ onImported }: Props) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const [result, setResult] = useState<BulkResult>();
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const reset = () => {
+    setError(undefined);
+    setResult(undefined);
+  };
+
+  const run = async (file: File) => {
+    setBusy(true);
+    setError(undefined);
+    setResult(undefined);
+    try {
+      const res = await api.bulkImport(file);
+      setResult(res);
+      if (res.ingested > 0) onImported();
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Could not import that file.",
+      );
+    } finally {
+      setBusy(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next: boolean) => {
+        setOpen(next);
+        if (!next) reset();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <UploadCloud /> Bulk Import
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Bulk import reports</DialogTitle>
+          <DialogDescription>
+            Upload a CSV or JSONL export — one report per row. Each row runs through the same rule
+            engine as everything else here and is persisted, exactly like submitting one at a time.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 px-5 py-4">
+          <p className="text-2xs text-ink-faint">
+            Expected columns / fields: <code className="text-ink-muted">text</code> (required),{" "}
+            <code className="text-ink-muted">site</code>, <code className="text-ink-muted">date</code>,
+            {" "}<code className="text-ink-muted">activity</code>,{" "}
+            <code className="text-ink-muted">reporter_role</code>.
+          </p>
+
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".csv,.jsonl,text/csv,application/json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void run(file);
+            }}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => fileInput.current?.click()}
+            disabled={busy}
+          >
+            {busy ? <Loader2 className="animate-spin" /> : <UploadCloud />}
+            {busy ? "Importing…" : "Choose file…"}
+          </Button>
+
+          {error && (
+            <p className="rounded-md border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-xs text-status-warning">
+              {error}
+            </p>
+          )}
+
+          {result && (
+            <div className="space-y-2 rounded-md border border-line bg-surface-sunken p-3 text-xs">
+              <p className="text-ink">
+                {result.ingested} of {result.received} rows ingested
+                {result.skipped > 0 && `, ${result.skipped} skipped`}.
+              </p>
+              {Object.keys(result.classification_counts).length > 0 && (
+                <p className="text-ink-muted">
+                  {Object.entries(result.classification_counts)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(" · ")}
+                </p>
+              )}
+              {result.errors.length > 0 && (
+                <details>
+                  <summary className="cursor-pointer text-ink-faint">
+                    {result.errors.length} error{result.errors.length === 1 ? "" : "s"}
+                  </summary>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-ink-faint">
+                    {result.errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button size="sm" onClick={() => setOpen(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

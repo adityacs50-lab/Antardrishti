@@ -237,6 +237,19 @@ class IngestResult(BaseModel):
     verdict: SIFVerdictOut
 
 
+class ExtractedTextOut(BaseModel):
+    """Plain text pulled from an uploaded PDF/.txt, for the report-entry form.
+
+    Purely a convenience layer over the report-entry form - it never touches
+    the rule engine or the database. That happens only when the extracted
+    text (edited or not) is actually submitted via POST /api/reports.
+    """
+
+    filename: str
+    text: str
+    truncated: bool = False
+
+
 class BulkResult(BaseModel):
     received: int
     ingested: int

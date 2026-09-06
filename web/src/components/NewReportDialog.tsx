@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FilePlus2, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { FilePlus2, Loader2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
@@ -34,8 +34,11 @@ export function NewReportDialog({ sites, activities, onSubmitted }: Props) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string>();
   const [justAdded, setJustAdded] = useState<IngestResult>();
+  const [attachedName, setAttachedName] = useState<string>();
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -43,6 +46,28 @@ export function NewReportDialog({ sites, activities, onSubmitted }: Props) {
     setForm(EMPTY);
     setError(undefined);
     setJustAdded(undefined);
+    setAttachedName(undefined);
+  };
+
+  const attach = async (file: File) => {
+    setExtracting(true);
+    setError(undefined);
+    try {
+      const { text, truncated } = await api.extractText(file);
+      set({ text });
+      setAttachedName(file.name + (truncated ? " (truncated to 20,000 chars)" : ""));
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Could not read that file.",
+      );
+    } finally {
+      setExtracting(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
   };
 
   const submit = async () => {
@@ -114,14 +139,43 @@ export function NewReportDialog({ sites, activities, onSubmitted }: Props) {
           </div>
         ) : (
           <div className="space-y-3 px-5 py-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-2xs text-ink-faint">Report text</span>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".pdf,.txt,application/pdf,text/plain"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void attach(file);
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInput.current?.click()}
+                disabled={extracting}
+              >
+                {extracting ? <Loader2 className="animate-spin" /> : <Paperclip />}
+                {extracting ? "Reading…" : "Attach PDF / .txt"}
+              </Button>
+            </div>
             <Textarea
               value={form.text}
-              onChange={(e) => set({ text: e.target.value })}
+              onChange={(e) => { set({ text: e.target.value }); setAttachedName(undefined); }}
               rows={6}
-              placeholder="Paste the report text, in any language…"
+              placeholder="Paste the report text, in any language, or attach a file above…"
               aria-label="Report text"
               autoFocus
             />
+            {attachedName && (
+              <p className="text-2xs text-ink-faint">
+                Extracted from <span className="text-ink-muted">{attachedName}</span> — review before
+                submitting.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-2xs text-ink-faint">Site *</label>

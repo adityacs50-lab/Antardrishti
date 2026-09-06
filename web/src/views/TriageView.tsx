@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { ClassificationBadge, ConfidencePill, ControlBadge, LsrBadge } from "@/components/Chips";
+import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { NewReportDialog } from "@/components/NewReportDialog";
 import { QueryBoundary } from "@/components/StateViews";
 import { LiveAnalysisPanel } from "./LiveAnalysisPanel";
@@ -96,11 +97,14 @@ export function TriageView() {
               of these — that is the point.
             </p>
           </div>
-          <NewReportDialog
-            sites={meta.data?.sites ?? []}
-            activities={meta.data?.activities ?? []}
-            onSubmitted={() => { triage.refetch(); meta.refetch(); }}
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <BulkImportDialog onImported={() => { triage.refetch(); meta.refetch(); }} />
+            <NewReportDialog
+              sites={meta.data?.sites ?? []}
+              activities={meta.data?.activities ?? []}
+              onSubmitted={() => { triage.refetch(); meta.refetch(); }}
+            />
+          </div>
         </header>
 
         <Card>

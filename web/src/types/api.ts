@@ -178,6 +178,20 @@ export interface ReportSubmitPayload {
   activity?: string;
 }
 
+export interface ExtractedText {
+  filename: string;
+  text: string;
+  truncated: boolean;
+}
+
+export interface BulkResult {
+  received: number;
+  ingested: number;
+  skipped: number;
+  errors: string[];
+  classification_counts: Record<string, number>;
+}
+
 export interface IngestResult {
   id: number;
   report_uid: string;

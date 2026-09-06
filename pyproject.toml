@@ -19,6 +19,7 @@ dependencies = [
     "onnxruntime>=1.18,<2.0",
     "numpy>=1.26,<2.0",
     "python-multipart>=0.0.9",
+    "pypdf>=4.2,<6.0",
 ]
 
 [project.scripts]
