@@ -3,12 +3,20 @@
 # training-only stack (torch, peft, accelerate, ...) which prahari's runtime
 # code never imports — see backend/prahari/ml/neural_extractor.py's own
 # docstring. psycopg replaces no equivalent locally: SQLite needs no driver.
+#
+# The optional `ml` extra (onnxruntime, tokenizers, numpy) is deliberately
+# left out here too: no trained ONNX model ships in this repo (models/ is
+# gitignored, training has never been run), and neural_extractor.py only
+# imports those packages lazily, inside _Runtime.load(), after checking the
+# model file exists on disk. Since it never does in this deployment, the
+# import is never reached and the app always runs the deterministic keyword
+# extractor. Including them anyway pushed the serverless function bundle
+# over Vercel's 225 MB limit for no runtime benefit. Re-add them (and ship a
+# real model + tokenizer.json under an included path) only once there is an
+# actual trained model to serve.
 fastapi>=0.141,<1.0
 uvicorn[standard]>=0.30,<1.0
 pydantic>=2.7,<3.0
 sqlalchemy>=2.0,<3.0
 psycopg[binary]>=3.1,<4.0
 python-multipart>=0.0.9
-onnxruntime>=1.18,<2.0
-tokenizers>=0.19,<1.0
-numpy>=1.26,<2.0
