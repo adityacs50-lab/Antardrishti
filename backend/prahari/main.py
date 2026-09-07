@@ -158,6 +158,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def _no_store_html(request, call_next):  # noqa: ANN001, ANN201
+    """Never let a browser reuse a cached index.html across a deployment.
+
+    The SPA's script tag names a content-hashed bundle (`index-<hash>.js`), and
+    a new build deletes the old one. A browser holding yesterday's index.html
+    therefore asks for a file that no longer exists, gets a 404, and renders a
+    blank page with no error anyone can see - observed live on the deployment
+    right before a demo. Hashed assets are immutable and stay cacheable; only
+    the HTML document, which is the thing that must never go stale, is marked
+    no-store. API responses are JSON and unaffected.
+    """
+    response = await call_next(request)
+    if response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, must-revalidate"
+    return response
+
+
 app.include_router(router)
 
 
