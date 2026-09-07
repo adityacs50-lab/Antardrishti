@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CLASSIFICATION_LABEL, CLASSIFICATION_MEANING, CONTROL_STATUS_LABEL,
-  LSR_SHORT, BAND_LABEL,
+  LSR_SHORT, LSR_LABEL, BAND_LABEL,
 } from "@/lib/format";
 import { BAND_TONE, CLASSIFICATION_TONE, CONTROL_TONE, STATUS } from "@/lib/theme";
 import type { Band, ControlStatus, LifeSavingRule, SifClassification } from "@/types/api";
@@ -31,9 +31,61 @@ export function ControlBadge({ value }: { value: ControlStatus }) {
   );
 }
 
-export function LsrBadge({ value }: { value: LifeSavingRule | null }) {
-  if (!value) return <Badge className="text-ink-faint">No rule assigned</Badge>;
-  return <Badge className="border-series-1/35 bg-series-1/10 text-series-1">{LSR_SHORT[value]}</Badge>;
+/**
+ * The IOGP Life-Saving Rule tag.
+ *
+ * A bare "No rule assigned" reads like a hole in the tagging. It is not: the
+ * nine rules are a fatality-prevention set derived from 405 fatalities, and
+ * they simply do not address a report with no identified energy source. Saying
+ * which of the two reasons applies turns an apparent gap into a stated
+ * engineering decision — which is the difference between a judge nodding and a
+ * judge asking why a third of the queue is blank.
+ */
+export function LsrBadge({
+  value,
+  energySource,
+  classification,
+}: {
+  value: LifeSavingRule | null;
+  energySource?: string | null;
+  classification?: SifClassification;
+}) {
+  if (value) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>
+            <Badge className="border-series-1/35 bg-series-1/10 text-series-1">
+              {LSR_SHORT[value]}
+            </Badge>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <strong>IOGP Life-Saving Rule — {LSR_SHORT[value]}.</strong> {LSR_LABEL[value]}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  const illegible = classification === "insufficient_information";
+  const why = illegible
+    ? "This report was too sparse to classify, so it never reached the rule-tagging step. Nothing is being withheld — there was nothing to read."
+    : energySource
+      ? "No rule was cued in the text and none maps to this energy source."
+      : "No energy source was identified in this report. The nine Life-Saving Rules address fatal-potential work; tagging a low-energy report with one would be an invention, so the engine leaves it blank on purpose.";
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <Badge className="border-dashed text-ink-muted">
+            {illegible ? "No rule — unreadable" : "No rule engaged"}
+          </Badge>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">{why}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function BandBadge({ value }: { value: Band }) {

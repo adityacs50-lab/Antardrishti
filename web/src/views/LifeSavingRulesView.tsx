@@ -7,11 +7,12 @@ import {
 import { ShieldCheck, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QueryBoundary } from "@/components/StateViews";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
 import { LSR_LABEL, LSR_SHORT, TREND_LABEL, ENERGY_LABEL } from "@/lib/format";
-import { STATUS, TREND_TONE } from "@/lib/theme";
+import { CHART_AXIS, CHART_AXIS_LINE, CHART_GRID, STATUS, TREND_TONE } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import type { LifeSavingRule, Trend } from "@/types/api";
 
@@ -26,6 +27,13 @@ export function LifeSavingRulesView() {
   const lsr = useQuery(() => api.lsr(), []);
   const barriers = useQuery(() => api.barriers({ window_days: WINDOW, limit: 200 }), []);
   const [selected, setSelected] = useState<LifeSavingRule | null>(null);
+
+  // Land on the most-engaged rule instead of an empty right-hand panel. The
+  // drill-down is the point of this screen; making the visitor guess that the
+  // bars are clickable wastes the first ten seconds of it. An explicit click
+  // still wins — this only fills the initial null.
+  const topRule = lsr.data?.buckets.find((b) => b.count > 0)?.lsr ?? null;
+  const active = selected ?? topRule;
   const navigate = useNavigate();
 
   const chartData = useMemo(
@@ -45,8 +53,8 @@ export function LifeSavingRulesView() {
   // browser, the drill-down filters reports by rule and summarises the controls
   // those reports actually named.
   const drill = useQuery(
-    () => (selected ? api.reports({ lsr: [selected], limit: 200 }) : Promise.resolve(null)),
-    [selected],
+    () => (active ? api.reports({ lsr: [active], limit: 200 }) : Promise.resolve(null)),
+    [active],
   );
 
   const drillBarriers = useMemo(() => {
@@ -63,9 +71,9 @@ export function LifeSavingRulesView() {
   }, [drill.data]);
 
   const selectedBarriers = useMemo(() => {
-    if (!selected || !barriers.data) return [];
+    if (!active || !barriers.data) return [];
     return barriers.data.patterns.slice(0, 60);
-  }, [selected, barriers.data]);
+  }, [active, barriers.data]);
 
   return (
     <div className="space-y-5">
@@ -102,17 +110,24 @@ export function LifeSavingRulesView() {
             >
               <ResponsiveContainer width="100%" height={330}>
                 <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 40, bottom: 4, left: 4 }}>
-                  <CartesianGrid stroke="#2c2c2a" strokeDasharray="2 4" horizontal={false} />
-                  <XAxis type="number" stroke="#383835" fontSize={10} tickLine={false} axisLine={{ stroke: "#383835" }} />
+                  <CartesianGrid stroke={CHART_GRID} strokeDasharray="2 4" horizontal={false} />
+                  {/* `stroke` on a recharts axis colours the TICK TEXT as well
+                      as the line. It was #383835 — invisible against the card
+                      on anything but a good monitor, which is not what a demo
+                      runs on. Text gets the readable ink; the line itself is
+                      overridden back to a quiet border colour. */}
+                  <XAxis
+                    type="number" {...CHART_AXIS} axisLine={{ stroke: CHART_AXIS_LINE }}
+                  />
                   <YAxis
-                    type="category" dataKey="name" width={110}
-                    stroke="#383835" fontSize={10} tickLine={false} axisLine={false}
+                    type="category" dataKey="name" width={124}
+                    {...CHART_AXIS} axisLine={false}
                   />
                   <RTooltip
                     cursor={{ fill: "rgb(255 255 255 / 0.04)" }}
                     contentStyle={{
                       background: "#1A2330", border: "1px solid #33425A",
-                      borderRadius: 6, fontSize: 11, color: "#E6EDF3",
+                      borderRadius: 6, fontSize: 12, color: "#E6EDF3",
                     }}
                     formatter={(value: unknown, key: unknown) => [
                       value as number,
@@ -127,11 +142,11 @@ export function LifeSavingRulesView() {
                       <Cell
                         key={d.rule}
                         cursor="pointer"
-                        fill={selected === d.rule ? "#5598e7" : "#3987e5"}
-                        fillOpacity={selected && selected !== d.rule ? 0.4 : 1}
+                        fill={active === d.rule ? "#5598e7" : "#3987e5"}
+                        fillOpacity={active && active !== d.rule ? 0.45 : 1}
                       />
                     ))}
-                    <LabelList dataKey="count" position="right" fill="#9FB0C0" fontSize={10} />
+                    <LabelList dataKey="count" position="right" fill="#C6D3DF" fontSize={12} />
                   </Bar>
                   <Bar dataKey="precursors" radius={[0, 4, 4, 0]} barSize={16} fill={STATUS.serious}
                     onClick={(d: any) => setSelected(d.rule)} />
@@ -145,11 +160,31 @@ export function LifeSavingRulesView() {
                 <span className="inline-flex items-center gap-1.5 text-2xs text-ink-muted">
                   <span className="size-2.5 rounded-sm" style={{ background: STATUS.serious }} /> Precursors
                 </span>
-                {lsr.data && lsr.data.unassigned > 0 && (
-                  <span className="ml-auto text-2xs text-ink-faint">
-                    {lsr.data.unassigned} report{lsr.data.unassigned === 1 ? "" : "s"} carry no rule
-                    (insufficient information)
-                  </span>
+                {lsr.data && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="ml-auto cursor-help text-2xs text-ink-faint underline decoration-dotted underline-offset-2">
+                        {lsr.data.precursor_assigned} of {lsr.data.precursor_total} precursors carry
+                        an IOGP rule tag
+                        {lsr.data.unassigned > 0 && ` · ${lsr.data.unassigned} reports untagged`}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-sm">
+                      <p className="mb-1.5">
+                        <strong>Coverage is measured over precursors</strong>, because that is what
+                        an HSE officer acts on. {lsr.data.assigned} of {lsr.data.total} reports
+                        overall carry a rule.
+                      </p>
+                      <p>
+                        The {lsr.data.unassigned} untagged split two ways:{" "}
+                        <strong>{lsr.data.unassigned_illegible}</strong> were too sparse to classify
+                        at all, and reached no rule; <strong>{lsr.data.unassigned_no_energy}</strong>{" "}
+                        were classified but name no energy source. The nine rules are a
+                        fatality-prevention set — tagging a low-energy report with one would be an
+                        invention, so the engine leaves it blank on purpose.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             </QueryBoundary>
@@ -159,16 +194,16 @@ export function LifeSavingRulesView() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {selected ? LSR_LABEL[selected] : "Select a rule"}
+              {active ? LSR_LABEL[active] : "Select a rule"}
             </CardTitle>
             <CardDescription>
-              {selected
-                ? "Which barrier states show up behind this rule, and the recurring failures across the field."
+              {active
+                ? "Which barrier states show up behind this rule, and the recurring failures across the field. Click any bar to switch rules."
                 : "Click a bar to see which barriers fail behind that rule."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!selected ? (
+            {!active ? (
               <p className="py-10 text-center text-xs text-ink-faint">No rule selected.</p>
             ) : (
               <>
@@ -262,7 +297,7 @@ export function LifeSavingRulesView() {
                 </div>
 
                 <button
-                  onClick={() => navigate(`/?lsr=${selected}`)}
+                  onClick={() => navigate(`/?lsr=${active}`)}
                   className="text-2xs text-series-1 hover:underline"
                 >
                   View reports under this rule →

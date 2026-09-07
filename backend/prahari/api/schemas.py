@@ -286,7 +286,16 @@ class LsrBucket(BaseModel):
 
 class LsrOut(BaseModel):
     total: int
+    assigned: int
     unassigned: int
+    #: Never reached the LSR rules — the report was too sparse to classify.
+    unassigned_illegible: int
+    #: Classified, but no energy source was identified. The nine rules are a
+    #: fatality-prevention set; leaving these untagged is the designed
+    #: behaviour, not a gap. Reported separately so the two are never conflated.
+    unassigned_no_energy: int
+    precursor_total: int
+    precursor_assigned: int
     buckets: list[LsrBucket]
 
 

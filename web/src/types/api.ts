@@ -135,7 +135,12 @@ export interface LsrBucket {
   lsr: LifeSavingRule; short_name: string;
   count: number; precursor_count: number; share: number;
 }
-export interface LsrOut { total: number; unassigned: number; buckets: LsrBucket[] }
+export interface LsrOut {
+  total: number; assigned: number; unassigned: number;
+  unassigned_illegible: number; unassigned_no_energy: number;
+  precursor_total: number; precursor_assigned: number;
+  buckets: LsrBucket[];
+}
 
 export interface BarrierPattern {
   control_key: string; control_label: string; control_class: string;

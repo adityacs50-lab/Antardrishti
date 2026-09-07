@@ -23,7 +23,12 @@
     --border-strong: 213 27% 27%;
     --text-1: 210 24% 93%;     /* #E6EDF3 primary ink  */
     --text-2: 209 17% 69%;     /* #9FB0C0 secondary    */
-    --text-3: 209 14% 49%;     /* #6B7C8F muted        */
+    /* Tertiary ink. Raised from 49% to 60% lightness after a projector test:
+       at 49% this cleared WCAG AA on a monitor but disappeared entirely on a
+       washed-out beamer, which is the only screen that matters on a demo
+       floor. 60% keeps it clearly subordinate to --text-2 (69%) while
+       reaching ~5.6:1 on the card surface. */
+    --text-3: 209 14% 60%;     /* #8695A6 muted        */
   }
 
   * { @apply border-line; }

@@ -39,7 +39,9 @@ export default {
         sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
-      fontSize: { "2xs": ["0.6875rem", { lineHeight: "1rem" }] },
+      // 11px -> 12px. The smallest type in the app carries badges, axis labels
+      // and provenance lines that a judge reads from several metres away.
+      fontSize: { "2xs": ["0.75rem", { lineHeight: "1.05rem" }] },
       borderRadius: { lg: "0.5rem", md: "0.375rem", sm: "0.25rem" },
       keyframes: {
         "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },

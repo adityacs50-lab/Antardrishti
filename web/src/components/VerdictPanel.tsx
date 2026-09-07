@@ -60,7 +60,11 @@ export function VerdictPanel({ verdict, reason }: { verdict: SIFVerdict; reason?
         <div className="mt-3 space-y-2 border-t border-line pt-3">
           <p className="text-2xs uppercase tracking-wide text-ink-faint">Life-Saving Rule</p>
           <div className="flex flex-wrap items-center gap-1.5">
-            <LsrBadge value={verdict.primary_lsr} />
+            <LsrBadge
+              value={verdict.primary_lsr}
+              energySource={verdict.energy_source}
+              classification={verdict.classification}
+            />
             {verdict.primary_lsr && (
               <span className="text-2xs text-ink-muted">{LSR_LABEL[verdict.primary_lsr]}</span>
             )}

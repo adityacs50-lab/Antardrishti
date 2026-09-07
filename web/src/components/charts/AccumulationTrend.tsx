@@ -1,10 +1,10 @@
 import {
   CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { STATUS } from "@/lib/theme";
+import { CHART_AXIS, CHART_AXIS_LINE, CHART_GRID, STATUS } from "@/lib/theme";
 import type { AccumulationCell } from "@/types/api";
 
-const AXIS = { stroke: "#383835", fontSize: 10, tickLine: false };
+const AXIS = CHART_AXIS;
 
 /**
  * Two points per site: the previous window and the current one.
@@ -27,13 +27,13 @@ export function AccumulationTrend({ cells }: { cells: AccumulationCell[] }) {
     <div>
       <ResponsiveContainer width="100%" height={190}>
         <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: -18 }}>
-          <CartesianGrid stroke="#2c2c2a" strokeDasharray="2 4" vertical={false} />
-          <XAxis dataKey="window" {...AXIS} axisLine={{ stroke: "#383835" }} />
+          <CartesianGrid stroke={CHART_GRID} strokeDasharray="2 4" vertical={false} />
+          <XAxis dataKey="window" {...AXIS} axisLine={{ stroke: CHART_AXIS_LINE }} />
           <YAxis {...AXIS} axisLine={false} width={42} />
           <ReferenceLine y={20} stroke={STATUS.serious} strokeDasharray="4 4" strokeOpacity={0.6}
-            label={{ value: "high", fill: STATUS.serious, fontSize: 9, position: "insideTopRight" }} />
+            label={{ value: "high", fill: STATUS.serious, fontSize: 11, position: "insideTopRight" }} />
           <ReferenceLine y={40} stroke={STATUS.critical} strokeDasharray="4 4" strokeOpacity={0.6}
-            label={{ value: "critical", fill: STATUS.critical, fontSize: 9, position: "insideTopRight" }} />
+            label={{ value: "critical", fill: STATUS.critical, fontSize: 11, position: "insideTopRight" }} />
           <Tooltip
             contentStyle={{
               background: "#1A2330", border: "1px solid #33425A",

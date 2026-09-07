@@ -97,3 +97,25 @@ export function densityInk(rate: number, total: number) {
   if (total === 0) return "hsl(var(--text-3))";
   return rate >= 0.6 ? "#0B0F14" : "hsl(var(--text-1))";
 }
+
+/**
+ * Shared recharts axis styling.
+ *
+ * Recharts uses an axis's `stroke` for its tick TEXT as well as its line, so a
+ * colour chosen to make the axis line recede also makes the labels unreadable.
+ * That is exactly what happened here: axis labels were #383835 on a #131A22
+ * card — about 1.5:1, fine on a laptop at arm's length and gone entirely on a
+ * projector. Ticks now take the secondary ink (~8.9:1) and the line is passed
+ * separately.
+ */
+export const CHART_AXIS = {
+  stroke: "#9FB0C0",
+  fontSize: 12,
+  tickLine: false,
+} as const;
+
+/** The axis rule itself — quiet, but still visible. */
+export const CHART_AXIS_LINE = "#33425A";
+
+/** Gridlines. Present enough to read a value against, never loud. */
+export const CHART_GRID = "#243040";

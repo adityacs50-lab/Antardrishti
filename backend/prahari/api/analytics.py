@@ -197,13 +197,30 @@ def lsr_distribution(
 
     total = 0
     unassigned = 0
+    unassigned_illegible = 0
+    unassigned_no_energy = 0
+    precursor_total = 0
+    precursor_assigned = 0
     for _, v in db.execute(stmt).all():
         total += 1
+        is_precursor = v.classification in PRECURSOR_CLASSES
+        precursor_total += is_precursor
         if not v.primary_lsr:
             unassigned += 1
+            # Two different things, and conflating them misreads the engine.
+            # An illegible report never reached the LSR rules at all
+            # (R-INSUFF-01 returns before them). A report that *was* classified
+            # but names no energy source is one the nine rules — a fatality
+            # prevention set — do not address; leaving it untagged is the
+            # designed behaviour, not a coverage hole.
+            if v.classification == SifClassification.INSUFFICIENT_INFORMATION.value:
+                unassigned_illegible += 1
+            else:
+                unassigned_no_energy += 1
             continue
         counts[v.primary_lsr] += 1
-        if v.classification in PRECURSOR_CLASSES:
+        precursor_assigned += is_precursor
+        if is_precursor:
             precursor_counts[v.primary_lsr] += 1
 
     assigned = sum(counts.values())
@@ -218,7 +235,19 @@ def lsr_distribution(
         for rule in LifeSavingRule
     ]
     buckets.sort(key=lambda b: -b["count"])
-    return {"total": total, "unassigned": unassigned, "buckets": buckets}
+    return {
+        "total": total,
+        "assigned": assigned,
+        "unassigned": unassigned,
+        "unassigned_illegible": unassigned_illegible,
+        "unassigned_no_energy": unassigned_no_energy,
+        # Coverage over the reports that matter. A rule tag on an illegible
+        # report would be an invention; a rule tag on every precursor is the
+        # thing an HSE officer actually needs, so that is what gets reported.
+        "precursor_total": precursor_total,
+        "precursor_assigned": precursor_assigned,
+        "buckets": buckets,
+    }
 
 
 # -- Barrier failure patterns ----------------------------------------------

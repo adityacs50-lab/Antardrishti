@@ -35,7 +35,11 @@ function QueueRow({ report }: { report: ReportSummary }) {
       <div className="min-w-0 space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
           <ClassificationBadge value={report.classification} />
-          <LsrBadge value={report.primary_lsr} />
+          <LsrBadge
+            value={report.primary_lsr}
+            energySource={report.energy_source}
+            classification={report.classification}
+          />
           <ControlBadge value={report.control_status} />
           {report.reviewed && (
             <span className="inline-flex items-center gap-1 text-2xs text-status-good">
