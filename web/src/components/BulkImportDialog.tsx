@@ -62,10 +62,16 @@ export function BulkImportDialog({ onImported }: Props) {
       // configurable) - a real export can easily cross that. Chunking here
       // means the person never has to know or care; each chunk is a
       // complete, independently-valid CSV/JSONL document.
+      setProgress("Reading file…");
+      // Yield a frame so the label above actually paints before the (possibly
+      // multi-second) parse of a large file takes the main thread.
+      await new Promise((r) => setTimeout(r, 0));
       const chunks = await chunkUploadFile(file);
       let combined: BulkResult | undefined;
       for (let i = 0; i < chunks.length; i++) {
-        if (chunks.length > 1) setProgress(`Importing part ${i + 1} of ${chunks.length}…`);
+        setProgress(
+          chunks.length > 1 ? `Importing part ${i + 1} of ${chunks.length}…` : "Importing…",
+        );
         const chunkFile = new File([chunks[i].blob], chunks[i].name);
         const res = await api.bulkImport(chunkFile);
         combined = combined ? mergeResults(combined, res) : res;
@@ -153,6 +159,15 @@ export function BulkImportDialog({ onImported }: Props) {
                 {result.ingested} of {result.received} rows ingested
                 {result.skipped > 0 && `, ${result.skipped} skipped`}.
               </p>
+              {/* An import that lands nothing is the one case where the reason
+                  must not be hidden behind a disclosure triangle — it is
+                  almost always a column-name mismatch, and the server's first
+                  error line says exactly which columns it did find. */}
+              {result.ingested === 0 && result.errors.length > 0 && (
+                <p className="rounded border border-status-warning/40 bg-status-warning/10 px-2 py-1.5 text-status-warning">
+                  {result.errors[0]}
+                </p>
+              )}
               {Object.keys(result.classification_counts).length > 0 && (
                 <p className="text-ink-muted">
                   {Object.entries(result.classification_counts)

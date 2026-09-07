@@ -30,7 +30,14 @@ from prahari.api.schemas import (
     RuleFiringOut,
     SIFVerdictOut,
 )
-from prahari.api.service import extract_pdf_text, parse_upload, persist, triage_rank, verdict_reason
+from prahari.api.service import (
+    coerce_date,
+    extract_pdf_text,
+    parse_upload,
+    persist,
+    triage_rank,
+    verdict_reason,
+)
 from prahari.ml.extractor import EXTRACTOR_VERSION
 from prahari.rules.engine import ENGINE_VERSION, analyse
 from prahari.db.models import Report, Review, Verdict
@@ -43,6 +50,13 @@ from prahari.domain.lsr import LIFE_SAVING_RULES, LifeSavingRule
 router = APIRouter(prefix="/api")
 
 EXCERPT_CHARS = 240
+
+#: Ceiling on rows accepted from one bulk upload. Every row runs the full
+#: extractor + rule engine (~10ms), so a 90,000-row public corpus is ~15
+#: minutes of work inside a single HTTP request — long past any serverless
+#: function limit and long past the point a browser has given up. Importing a
+#: bounded prefix and saying so beats a request that never returns.
+MAX_BULK_ROWS = 2000
 
 
 def _verdict_out(verdict: Verdict) -> SIFVerdictOut:
@@ -280,45 +294,75 @@ async def ingest_bulk(
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"could not parse upload: {exc}") from exc
 
+    received = len(records)
+    if received > MAX_BULK_ROWS:
+        records = records[:MAX_BULK_ROWS]
+
     ingested = 0
     skipped = 0
     errors: list[str] = []
     counts: dict[str, int] = {}
+    missing_text = 0
 
     for i, rec in enumerate(records, start=1):
         try:
             text = (rec.get("text") or "").strip()
             if not text:
                 skipped += 1
-                errors.append(f"row {i}: missing text")
+                missing_text += 1
+                if len(errors) < 25:
+                    errors.append(f"row {i}: missing text")
                 continue
             uid = rec.get("report_uid") or rec.get("report_id")
             if uid and db.scalar(select(Report.id).where(Report.report_uid == str(uid))):
                 skipped += 1
                 continue
-            raw_date = rec.get("date") or rec.get("report_date")
-            report_date = date.fromisoformat(str(raw_date)) if raw_date else date.today()
-            report = persist(
-                db,
-                text=text,
-                site=str(rec.get("site") or "(unspecified)"),
-                report_date=report_date,
-                reporter_role=rec.get("reporter_role"),
-                activity=rec.get("activity"),
-                report_uid=str(uid) if uid else None,
-                source="bulk",
-                commit=False,
-            )
-            db.flush()
+            report_date = coerce_date(rec.get("date") or rec.get("report_date")) or date.today()
+            # A savepoint, not the whole transaction. `db.rollback()` here used
+            # to discard every row flushed since the last commit, so one bad
+            # row silently threw away the hundreds of good ones before it while
+            # still reporting them as ingested — an import that claimed success
+            # and left the queue empty.
+            with db.begin_nested():
+                report = persist(
+                    db,
+                    text=text,
+                    site=str(rec.get("site") or "(unspecified)"),
+                    report_date=report_date,
+                    reporter_role=rec.get("reporter_role"),
+                    activity=rec.get("activity"),
+                    report_uid=str(uid) if uid else None,
+                    source="bulk",
+                    commit=False,
+                )
+                db.flush()
             counts[report.verdict.classification] = counts.get(report.verdict.classification, 0) + 1
             ingested += 1
         except Exception as exc:  # noqa: BLE001
-            db.rollback()
             skipped += 1
             if len(errors) < 25:
                 errors.append(f"row {i}: {exc}")
 
     db.commit()
+
+    # An import that ingests nothing is nearly always a column-name mismatch,
+    # not a broken file. Say which columns the file actually had, so the fix is
+    # obvious instead of a guess.
+    if ingested == 0 and missing_text:
+        seen = sorted({str(k) for rec in records[:50] for k in rec})[:20]
+        errors.insert(
+            0,
+            "No row had a usable report narrative. Columns found: "
+            + (", ".join(seen) or "(none)")
+            + ". One of them must hold the report text — name it `text` "
+            "(or narrative / description / final narrative) and re-upload.",
+        )
+    if received > MAX_BULK_ROWS:
+        errors.insert(
+            0,
+            f"This file has {received:,} rows; the first {MAX_BULK_ROWS:,} were imported. "
+            "Split the file if you need the rest.",
+        )
     return BulkResult(
         received=len(records),
         ingested=ingested,

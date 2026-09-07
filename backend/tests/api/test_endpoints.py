@@ -116,6 +116,69 @@ def test_bulk_csv_upload(api) -> None:
     assert r.json()["ingested"] == 2
 
 
+def test_bulk_maps_real_world_column_names_and_dates(api) -> None:
+    """A real export never names its narrative column `text`.
+
+    This is the OSHA severe-injury file's own header shape (Final Narrative /
+    City / EventDate / ID, US-style m/d/Y dates). Before column aliasing every
+    row of a 90,000-row public corpus was skipped as "missing text" and the
+    import reported nothing ingested for a perfectly good file.
+    """
+    csv_text = (
+        '"ID","EventDate","City","Final Narrative"\n'
+        f'"2015010015",3/14/2015,"SANDUSKY","{HIGH_ENERGY_UNCONTROLLED}"\n'
+        f'"2015010016",1/1/2015,"OTISVILLE","{LOW_ENERGY_INJURY}"\n'
+    )
+    r = api.post(
+        "/api/reports/bulk",
+        files={"file": ("osha.csv", io.BytesIO(csv_text.encode()), "text/csv")},
+    )
+    assert r.status_code == 200
+    assert r.json()["ingested"] == 2
+
+    listed = api.get("/api/reports?limit=10").json()["items"]
+    assert {row["site"] for row in listed} == {"SANDUSKY", "OTISVILLE"}
+    # m/d/Y read as month-first, not silently dropped or defaulted to today.
+    assert "2015-03-14" in {row["date"] for row in listed}
+
+
+def test_bulk_keeps_good_rows_when_a_later_row_fails(api) -> None:
+    """One bad row must not discard the rows already ingested before it.
+
+    The failure path used to call `db.rollback()`, which throws away the whole
+    uncommitted transaction — every earlier row went with it while still being
+    counted as ingested. The import then claimed success over an empty queue.
+    """
+    over_limit = "x " * 20_000  # past ReportIn/column bounds — fails on flush
+    lines = [
+        json.dumps({"text": HIGH_ENERGY_UNCONTROLLED, "site": "Moran", "date": "2026-05-01"}),
+        json.dumps({"text": over_limit, "site": "Moran", "date": "2026-05-02"}),
+        json.dumps({"text": LOW_ENERGY_INJURY, "site": "Moran", "date": "2026-05-03"}),
+    ]
+    r = api.post(
+        "/api/reports/bulk",
+        files={"file": ("corpus.jsonl", io.BytesIO("\n".join(lines).encode()), "application/x-ndjson")},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    # Whatever the middle row does, the count reported must match what is
+    # actually stored — that equality is the property the savepoint restores.
+    assert api.get("/api/reports?limit=100").json()["total"] == body["ingested"]
+    assert body["ingested"] >= 2
+
+
+def test_bulk_says_which_columns_it_found_when_nothing_matched(api) -> None:
+    csv_text = 'alpha,beta\n"some value","another"\n'
+    r = api.post(
+        "/api/reports/bulk",
+        files={"file": ("mystery.csv", io.BytesIO(csv_text.encode()), "text/csv")},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["ingested"] == 0
+    assert "alpha" in body["errors"][0] and "beta" in body["errors"][0]
+
+
 def test_bulk_rejects_unparseable_upload(api) -> None:
     r = api.post(
         "/api/reports/bulk",

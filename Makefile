@@ -13,6 +13,8 @@ NPM         ?= npm
 API_PORT    ?= 8000
 WEB_PORT    ?= 5173
 SEED_LIMIT  ?= 700
+# Where the built SPA looks for the API. Baked into the bundle at build time.
+API_BASE_URL ?= http://localhost:$(API_PORT)
 BACKEND     := backend
 WEB         := web
 RUN         := PYTHONPATH=.
@@ -80,7 +82,12 @@ build:
 		echo ""; \
 		exit 1; \
 	fi
-	cd $(WEB) && $(NPM) run build
+	@# vite bakes VITE_API_BASE_URL in at BUILD time. Unset, the production
+	@# bundle calls same-origin /api on the static server's port, which
+	@# launch_demo.sh deliberately 502s - every screen then reads "Backend
+	@# offline" on the demo floor. The backend already allowlists this origin
+	@# in CORS; the cross-origin call was always the intended design.
+	cd $(WEB) && VITE_API_BASE_URL=$(API_BASE_URL) $(NPM) run build
 
 seed:
 	@echo "==> seeding $(SEED_LIMIT) reports"

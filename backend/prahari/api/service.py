@@ -6,7 +6,7 @@ import csv
 import io
 import json
 import uuid
-from datetime import date
+from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
@@ -190,20 +190,136 @@ def extract_pdf_text(raw: bytes) -> str:
     return "\n\n".join(p for p in pages if p.strip())
 
 
+#: Column/field names a real-world export is likely to use for each field the
+#: ingest path needs. A public incident corpus (OSHA's severe-injury file, an
+#: OIL/ONGC register, a plant's own spreadsheet) never happens to name its
+#: narrative column "text" — before this, every such row was skipped as
+#: "missing text" and the import reported nothing ingested for a file that was
+#: perfectly good. Matching is done on a normalised key (lowercased, with
+#: spaces/underscores/hyphens removed), so "Final Narrative", "final_narrative"
+#: and "FINAL NARRATIVE" are all the same column.
+FIELD_ALIASES: dict[str, tuple[str, ...]] = {
+    "text": (
+        "text", "finalnarrative", "narrative", "description", "incidentdescription",
+        "eventdescription", "report", "reporttext", "reportdescription", "details",
+        "detail", "summary", "observation", "observations", "remarks", "body",
+        "whathappened", "briefdescription", "abstract",
+    ),
+    "site": (
+        "site", "location", "installation", "facility", "plant", "field", "area",
+        "city", "employer", "workplace", "department", "unit",
+    ),
+    "date": (
+        "date", "reportdate", "eventdate", "incidentdate", "occurrencedate",
+        "dateofincident", "occurredon", "datetime", "timestamp",
+    ),
+    "activity": ("activity", "task", "job", "operation", "worktype", "jobtype", "process"),
+    "reporter_role": ("reporterrole", "role", "reportedby", "reporter", "designation"),
+    "report_uid": ("reportuid", "reportid", "id", "uid", "refno", "referenceno", "inspection"),
+}
+
+#: Date formats seen in real exports, tried in order. ISO first because that is
+#: what this project's own tooling writes; the US-style m/d/Y next because that
+#: is what the OSHA corpus uses; the day-first forms after that for Indian
+#: spreadsheets, which is also why %d/%m/%Y is NOT in this list — it is
+#: indistinguishable from %m/%d/%Y and guessing wrong silently corrupts every
+#: date in the file. A slashed date is read as month-first; a dashed or dotted
+#: one as day-first, which is how each is conventionally written.
+_DATE_FORMATS: tuple[str, ...] = (
+    "%Y-%m-%d", "%Y/%m/%d", "%m/%d/%Y", "%m/%d/%y",
+    "%d-%m-%Y", "%d-%m-%y", "%d.%m.%Y", "%d.%m.%y", "%d %b %Y", "%d %B %Y",
+)
+
+
+def _norm_key(key: str) -> str:
+    return "".join(ch for ch in str(key).lower() if ch.isalnum())
+
+
+def normalise_record(rec: dict) -> dict:
+    """Map an arbitrary export's columns onto the fields ingest understands.
+
+    Exact/canonical names always win: a file that already has a `text` column
+    keeps it, and nothing here can override an explicit field. Only unmatched
+    canonical fields are filled in from an alias, and the first alias listed
+    wins, so `text` beats `narrative` beats `description` deterministically.
+    Unrecognised columns are preserved untouched — a caller may still want them.
+    """
+    if not isinstance(rec, dict):
+        return {}
+    out = dict(rec)
+    by_norm: dict[str, object] = {}
+    for key, value in rec.items():
+        nk = _norm_key(key)
+        if nk and nk not in by_norm:
+            by_norm[nk] = value
+
+    for canonical, aliases in FIELD_ALIASES.items():
+        existing = out.get(canonical)
+        if isinstance(existing, str) and existing.strip():
+            continue
+        if existing not in (None, ""):
+            continue
+        for alias in aliases:
+            value = by_norm.get(alias)
+            if isinstance(value, str) and value.strip():
+                out[canonical] = value.strip()
+                break
+            if value not in (None, ""):
+                out[canonical] = value
+                break
+    return out
+
+
+def coerce_date(raw: object) -> date | None:
+    """Read a date written in any of the formats real exports actually use.
+
+    Returns None when nothing parses, so the caller can fall back rather than
+    lose an otherwise-valid report. A row whose narrative is good should never
+    be discarded because its date column is formatted for a different country.
+    """
+    if raw in (None, ""):
+        return None
+    if isinstance(raw, date):
+        return raw
+    s = str(raw).strip()
+    if not s:
+        return None
+    s = s.split("T")[0].split(" ")[0] if s[:4].isdigit() else s
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    try:
+        return date.fromisoformat(s[:10])
+    except ValueError:
+        return None
+
+
 def parse_upload(filename: str, raw: bytes) -> list[dict]:
-    """Parse a JSONL or CSV upload into ingest dicts. Never touches the network."""
+    """Parse a JSONL or CSV upload into ingest dicts. Never touches the network.
+
+    Column names are normalised through FIELD_ALIASES on the way out, so an
+    export that calls its narrative "Final Narrative" and its date "EventDate"
+    lands on `text`/`date` like anything else.
+    """
     text = raw.decode("utf-8-sig", errors="replace")
     name = (filename or "").lower()
     records: list[dict] = []
 
     if name.endswith(".csv"):
         for row in csv.DictReader(io.StringIO(text)):
-            records.append({k: (v.strip() if isinstance(v, str) else v) for k, v in row.items()})
+            cleaned = {
+                k: (v.strip() if isinstance(v, str) else v)
+                for k, v in row.items()
+                if k is not None
+            }
+            records.append(normalise_record(cleaned))
         return records
 
     for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
-        records.append(json.loads(line))
+        records.append(normalise_record(json.loads(line)))
     return records

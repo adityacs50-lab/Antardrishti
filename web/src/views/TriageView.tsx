@@ -98,11 +98,19 @@ export function TriageView() {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <BulkImportDialog onImported={() => { triage.refetch(); meta.refetch(); }} />
+            <BulkImportDialog onImported={() => {
+                triage.refetch();
+                meta.refetch();
+                window.dispatchEvent(new Event("prahari:data-changed"));
+              }} />
             <NewReportDialog
               sites={meta.data?.sites ?? []}
               activities={meta.data?.activities ?? []}
-              onSubmitted={() => { triage.refetch(); meta.refetch(); }}
+              onSubmitted={() => {
+                triage.refetch();
+                meta.refetch();
+                window.dispatchEvent(new Event("prahari:data-changed"));
+              }}
             />
           </div>
         </header>

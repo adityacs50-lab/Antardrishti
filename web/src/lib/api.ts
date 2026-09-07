@@ -128,14 +128,23 @@ export const api = {
   extractText: (file: File) => {
     const body = new FormData();
     body.append("file", file);
-    return request<ExtractedText>("/api/extract-text", { method: "POST", body });
+    // A long PDF is a slower upload and a slower parse than a JSON round-trip.
+    return request<ExtractedText>("/api/extract-text", { method: "POST", body }, 60_000);
   },
 
-  /** Bulk-ingest a CSV or JSONL export — each row runs through the real engine and persists. */
+  /**
+   * Bulk-ingest a CSV or JSONL export — each row runs through the real engine
+   * and persists.
+   *
+   * The 15s default would abort this: a chunk carries up to MAX_BULK_ROWS
+   * rows and every one of them runs the full extractor and rule engine
+   * server-side, which is tens of seconds of honest work, not a hung request.
+   * Aborting it mid-import looked exactly like the backend being down.
+   */
   bulkImport: (file: File) => {
     const body = new FormData();
     body.append("file", file);
-    return request<BulkResult>("/api/reports/bulk", { method: "POST", body });
+    return request<BulkResult>("/api/reports/bulk", { method: "POST", body }, 300_000);
   },
 
   analyze: (text: string) =>

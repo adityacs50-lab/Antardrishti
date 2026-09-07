@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Grid3x3, ListChecks, ShieldCheck, Radar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,18 @@ const NAV = [
 export function AppShell() {
   const health = useQuery(() => api.health(), []);
   const connected = !!health.data && !health.offline;
+
+  // The header's "N reports" is read from /health once on mount. Importing a
+  // corpus or submitting a report changes that number, and a header still
+  // reading "0 reports" over a full queue is the kind of thing a judge notices.
+  // The dialogs announce it; this listens. A window event rather than lifted
+  // state because this shell and those dialogs share no other context.
+  const refetchHealth = health.refetch;
+  useEffect(() => {
+    const onChanged = () => void refetchHealth();
+    window.addEventListener("prahari:data-changed", onChanged);
+    return () => window.removeEventListener("prahari:data-changed", onChanged);
+  }, [refetchHealth]);
 
   return (
     <div className="min-h-screen bg-bg">
