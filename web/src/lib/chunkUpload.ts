@@ -28,6 +28,21 @@ const MAX_CHUNK_BYTES = 3_000_000;
  */
 export const MAX_IMPORT_ROWS = 2000;
 
+/**
+ * Rows per request. Bytes are not the only budget: every row runs the full
+ * extractor and rule engine server-side (~8ms), so 2000 rows is ~16s of work
+ * inside one request - fine locally, uncomfortably close to Vercel's 30s
+ * function ceiling on a cold start. Several smaller requests finish well
+ * inside it and give the dialog something honest to count.
+ */
+const MAX_CHUNK_ROWS = 600;
+
+/**
+ * Below this, send the file untouched: too small to hold enough rows to
+ * strain a single request, so there is nothing to gain from reading it.
+ */
+const SINGLE_REQUEST_BYTES = 900_000;
+
 /** UTF-8 byte length without allocating a Blob or a TextEncoder buffer per row. */
 function utf8Len(s: string): number {
   let bytes = 0;
@@ -109,7 +124,7 @@ function splitJsonlRows(text: string, limit = Infinity): string[] {
 export async function chunkUploadFile(
   file: File,
 ): Promise<{ blob: Blob; name: string }[]> {
-  if (file.size <= MAX_CHUNK_BYTES) {
+  if (file.size <= SINGLE_REQUEST_BYTES) {
     return [{ blob: file, name: file.name }];
   }
 
@@ -136,7 +151,10 @@ export async function chunkUploadFile(
 
   for (const row of dataRows) {
     const rowBytes = utf8Len(row) + 1; // +1 for the newline that joins it back
-    if (current.length > 0 && currentBytes + rowBytes > MAX_CHUNK_BYTES) {
+    if (
+      current.length > 0 &&
+      (currentBytes + rowBytes > MAX_CHUNK_BYTES || current.length >= MAX_CHUNK_ROWS)
+    ) {
       chunks.push(current);
       current = [];
       currentBytes = headerBytes;
