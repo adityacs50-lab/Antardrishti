@@ -11,6 +11,9 @@ import { NewReportDialog } from "@/components/NewReportDialog";
 import { QueryBoundary } from "@/components/StateViews";
 import { KpiBar } from "@/components/KpiBar";
 import { AuditDrawer } from "@/components/AuditDrawer";
+import { EngineMetricsCard } from "@/components/EngineMetricsCard";
+import { ExportForHSE } from "@/components/ExportForHSE";
+import { RecommendedActions } from "@/components/RecommendedActions";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
 import { CLASSIFICATION_LABEL, CLASSIFICATION_MEANING, formatDate } from "@/lib/format";
@@ -151,13 +154,21 @@ export function TriageView() {
           single row. */}
       <KpiBar />
 
+      {/* Why trust the queue (measured, reproducible) and what to do about
+          it (deterministic ordering of the Accumulation Index). */}
+      <div className="grid gap-3 xl:grid-cols-5 xl:items-start">
+        <EngineMetricsCard className="animate-fade-in xl:col-span-3" />
+        <RecommendedActions className="animate-fade-in xl:col-span-2" />
+      </div>
+
       <section className="space-y-3">
-        <header className="flex items-center justify-between gap-3">
+        <header className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight text-ink">
             <TriangleAlert className="size-4 text-status-serious" />
             Triage Queue
           </h2>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportForHSE site={site} includeEvents={includeEvents} total={total} />
             <BulkImportDialog onImported={refreshAll} />
             <NewReportDialog
               sites={meta.data?.sites ?? []}

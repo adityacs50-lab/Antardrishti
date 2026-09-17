@@ -9,6 +9,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from prahari.api import analytics as an
+from prahari.api.ontology import build_ontology
+from prahari.evaluation import load_metrics
 from prahari.api.schemas import (
     AccumulationOut,
     AnalyzeIn,
@@ -634,3 +636,42 @@ def analytics_accumulation(
             min_index=min_index,
         )
     )
+
+
+@router.get("/ontology")
+def ontology() -> dict:
+    """The vocabulary the engine runs on: Energy Wheel, barrier states, direct
+    controls, IOGP Life-Saving Rules, prahari's extensions, and the named rule
+    catalogue. Read straight from `prahari.domain` - never a second copy."""
+    return build_ontology()
+
+
+@router.get("/engine-metrics")
+def engine_metrics(db: Session = Depends(get_db)) -> dict:
+    """Measured engine performance plus live HSE reviewer agreement.
+
+    `benchmark` is the committed output of `python -m prahari.evaluation.metrics`
+    (null if it has never been run). `reviewer_agreement` is computed now from
+    the append-only review log: for each reviewed report, did the LATEST human
+    decision confirm the engine's verdict or override it? With few reviews the
+    number is noisy, so `reviewed_reports` is always returned beside it.
+    """
+    latest = (
+        select(Review.report_id, func.max(Review.id).label("rid"))
+        .group_by(Review.report_id)
+        .subquery()
+    )
+    rows = db.execute(
+        select(Review.decision).join(latest, Review.id == latest.c.rid)
+    ).all()
+    confirms = sum(1 for (d,) in rows if d == "confirm")
+    reviewed = len(rows)
+    return {
+        "benchmark": load_metrics(),
+        "reviewer_agreement": {
+            "reviewed_reports": reviewed,
+            "confirmed": confirms,
+            "overridden": reviewed - confirms,
+            "agreement": round(confirms / reviewed, 4) if reviewed else None,
+        },
+    }

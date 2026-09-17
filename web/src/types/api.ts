@@ -212,3 +212,71 @@ export interface ReviewPayload {
   corrected_control_status?: ControlStatus;
   corrected_primary_lsr?: LifeSavingRule;
 }
+
+/* ---- Engine Performance (GET /api/engine-metrics) ----------------------- */
+
+export interface BinaryScore {
+  precision: number; recall: number; f1: number;
+  tp: number; fp: number; fn: number; tn: number;
+}
+export interface SplitScore {
+  n: number;
+  precursor_detection: BinaryScore;
+  sif_potential_detection: BinaryScore;
+  accuracy: Record<
+    "classification" | "energy_source" | "control_status" | "injury_outcome" | "primary_lsr",
+    number
+  >;
+  classification_macro_f1: number;
+  per_class: Record<string, BinaryScore>;
+  latency_ms: { mean: number; p95: number };
+}
+export interface Benchmark {
+  measured_at: string;
+  engine_version: string;
+  extractor_version: string;
+  extractor_path: string;
+  corpus: { file: string; records: number; kind: string; note: string };
+  headline_split: "test" | "all";
+  splits: { test: SplitScore; all: SplitScore };
+  reproduce: string;
+}
+export interface EngineMetrics {
+  benchmark: Benchmark | null;
+  reviewer_agreement: {
+    reviewed_reports: number; confirmed: number; overridden: number;
+    agreement: number | null;
+  };
+}
+
+/* ---- Ontology (GET /api/ontology) ---------------------------------------- */
+
+export interface OntologyEnergy {
+  value: EnergySource; label: string; definition: string;
+  trigger_phrases: string[];
+  high_energy_cues: { key: string; label: string; basis: string }[];
+  life_saving_rules: LifeSavingRule[];
+  direct_controls: string[];
+  citations: string[];
+}
+export interface OntologyControl {
+  key: string; label: string; energy_source: EnergySource | null;
+  control_class: "direct_absolute" | "direct_mitigating" | "indirect";
+  rationale: string; life_saving_rules: LifeSavingRule[];
+}
+export interface Ontology {
+  version: string;
+  high_energy_threshold_joules: number;
+  energy_sources: OntologyEnergy[];
+  barrier_states: { value: ControlStatus; protective: boolean; meaning: string }[];
+  direct_control_test: string[];
+  controls: OntologyControl[];
+  life_saving_rules: {
+    value: LifeSavingRule; short_name: string; statements: string[];
+    related_energy_sources: EnergySource[]; trigger_phrases: string[]; origin: string;
+  }[];
+  prahari_extensions: { name: string; detail: string }[];
+  classifications: { value: SifClassification; label: string; definition: string; precursor: boolean }[];
+  rules: { id: string; stage: string; summary: string }[];
+  citations: { key: string; publisher: string; title: string; year: number | null; tier: string }[];
+}

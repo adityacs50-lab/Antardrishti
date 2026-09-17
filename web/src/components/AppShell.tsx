@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { FlaskConical, Grid3x3, ListChecks, Radar, ShieldCheck, ShieldOff } from "lucide-react";
+import { BookOpen, FlaskConical, Grid3x3, ListChecks, Radar, ShieldCheck, ShieldOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
@@ -21,6 +21,7 @@ const PRIMARY_NAV = [
 const SECONDARY_NAV = [
   { to: "/map", label: "Patterns", icon: Grid3x3 },
   { to: "/rules", label: "Rules", icon: ShieldCheck },
+  { to: "/ontology", label: "Ontology", icon: BookOpen },
 ];
 
 export function AppShell() {
@@ -93,7 +94,7 @@ export function AppShell() {
                 className="hidden items-center gap-1 border border-line px-2 py-0.5 text-2xs text-ink-muted md:inline-flex"
                 title={`${health.data.report_count} reports in the queue · extractor ${health.data.extractor_version}`}
               >
-                Ontology v{health.data.engine_version}
+                Ontology {health.data.engine_version}
               </span>
             )}
 
@@ -153,6 +154,8 @@ export function AppShell() {
               <NavLink
                 key={to}
                 to={to}
+                aria-label={label}
+                title={label}
                 className={({ isActive }: { isActive: boolean }) =>
                   cn(
                     "inline-flex items-center gap-1 text-2xs transition-colors",
@@ -160,8 +163,8 @@ export function AppShell() {
                   )
                 }
               >
-                <Icon className="size-3" />
-                {label}
+                <Icon className="size-3.5 sm:size-3" />
+                <span className="hidden sm:inline">{label}</span>
               </NavLink>
             ))}
           </nav>

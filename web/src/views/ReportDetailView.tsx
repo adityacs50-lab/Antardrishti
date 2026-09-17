@@ -7,6 +7,7 @@ import { ClassificationBadge } from "@/components/Chips";
 import { HighlightLegend, HighlightedReport } from "@/components/HighlightedReport";
 import { RuleTrace } from "@/components/RuleTrace";
 import { VerdictPanel } from "@/components/VerdictPanel";
+import { HybridEnginePanel } from "@/components/HybridEnginePanel";
 import { QueryBoundary } from "@/components/StateViews";
 import { ReviewDialog } from "@/components/ReviewDialog";
 import { api } from "@/lib/api";
@@ -122,6 +123,7 @@ export function ReportDetailView() {
 
               <div className="space-y-4 lg:sticky lg:top-[76px] lg:self-start">
                 <VerdictPanel verdict={report.verdict} />
+                <HybridEnginePanel verdict={report.verdict} spans={report.evidence_spans} stacked />
 
                 <Card>
                   <CardHeader>

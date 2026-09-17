@@ -13,8 +13,8 @@
  */
 
 import type {
-  AccumulationOut, AnalyzeResult, BarriersOut, BulkResult, DensityOut, ExtractedText,
-  IngestResult, LsrOut, Meta, Page, ReportDetail, ReportSubmitPayload, ReportSummary,
+  AccumulationOut, AnalyzeResult, BarriersOut, BulkResult, DensityOut, EngineMetrics,
+  ExtractedText, IngestResult, Ontology, LsrOut, Meta, Page, ReportDetail, ReportSubmitPayload, ReportSummary,
   ReviewPayload, SifClassification, EnergySource, LifeSavingRule,
 } from "@/types/api";
 
@@ -169,6 +169,12 @@ export const api = {
 
   barriers: (p: { window_days?: number; site?: string; limit?: number } = {}) =>
     request<BarriersOut>(`/api/analytics/barriers${qs(p)}`),
+
+  /** Measured benchmark (committed JSON) + live reviewer agreement. */
+  engineMetrics: () => request<EngineMetrics>("/api/engine-metrics"),
+
+  /** The vocabulary the engine runs on, read from prahari.domain. */
+  ontology: () => request<Ontology>("/api/ontology"),
 
   accumulation: (p: { window_days?: number; site?: string; min_index?: number } = {}) =>
     request<AccumulationOut>(`/api/analytics/accumulation${qs(p)}`),

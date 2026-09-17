@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BandBadge } from "@/components/Chips";
 import { QueryBoundary } from "@/components/StateViews";
+import { RecommendedActions } from "@/components/RecommendedActions";
 import { AccumulationTrend } from "@/components/charts/AccumulationTrend";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
@@ -152,6 +153,8 @@ export function PrecursorMapView() {
           </div>
         </div>
       )}
+
+      <RecommendedActions className="animate-fade-in" />
 
       {/* Lead with the pitch: the same barrier failing again is the thing
           worth funding. The heatmap is corroborating detail, not the hook —

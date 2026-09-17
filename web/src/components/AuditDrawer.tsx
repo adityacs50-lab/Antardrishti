@@ -10,6 +10,7 @@ import { ClassificationBadge } from "@/components/Chips";
 import { HighlightLegend, HighlightedReport } from "@/components/HighlightedReport";
 import { RuleTrace } from "@/components/RuleTrace";
 import { VerdictPanel } from "@/components/VerdictPanel";
+import { HybridEnginePanel } from "@/components/HybridEnginePanel";
 import { QueryBoundary } from "@/components/StateViews";
 import { ReviewDialog } from "@/components/ReviewDialog";
 import { api } from "@/lib/api";
@@ -101,6 +102,8 @@ export function AuditDrawer({
                 )}
 
                 <VerdictPanel verdict={report.verdict} />
+
+                <HybridEnginePanel verdict={report.verdict} spans={report.evidence_spans} />
 
                 <Card>
                   <CardHeader className="space-y-2">
