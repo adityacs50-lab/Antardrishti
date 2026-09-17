@@ -81,7 +81,15 @@ Write-Host "  Migrating / creating tables..."
 if (-not $SkipSeed) {
     Write-Host "  Seeding $SeedLimit reports (deterministic seed=42)..."
     $env:PYTHONPATH = Join-Path $Repo "backend"
-    Invoke-Py -m prahari.cli seed --limit $SeedLimit
+    # `seed` refuses (exit 1) when the database already has reports. That is the
+    # normal case on every run after the first, and it keeps any confirm /
+    # override reviews made while rehearsing - so treat it as success.
+    $seedArgs = @($Py.Args) + @("-m", "prahari.cli", "seed", "--limit", "$SeedLimit")
+    $seedOut = (& $Py.Launcher @seedArgs 2>&1 | Out-String)
+    Write-Host $seedOut.Trim()
+    if ($LASTEXITCODE -ne 0 -and $seedOut -notmatch "already holds") {
+        throw "Seeding failed."
+    }
 }
 
 if (-not $Dev) {
@@ -133,32 +141,11 @@ if ($Dev) {
     ) -WorkingDirectory (Join-Path $Repo "web")
     $uiUrl = "http://localhost:$WebPort"
 } else {
-    # Prefer FastAPI serving web/dist (SPA mount). Also expose Vite-less UI on :5173
-    # via Python SPA static server matching launch_demo.sh behavior for judges.
-    $spaScript = @"
-import http.server, os, socketserver, sys
-PORT = int(sys.argv[1])
-os.chdir(r'$(Join-Path $Repo "web\dist")')
-class SPA(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        path = self.path.split('?', 1)[0]
-        target = path.lstrip('/')
-        if target and os.path.exists(target) and not os.path.isdir(target):
-            return super().do_GET()
-        self.path = '/index.html'
-        return super().do_GET()
-    def log_message(self, *args):
-        pass
-socketserver.TCPServer.allow_reuse_address = True
-with socketserver.TCPServer(('127.0.0.1', PORT), SPA) as httpd:
-    httpd.serve_forever()
-"@
-    $spaFile = Join-Path $env:TEMP "prahari_spa_server.py"
-    Set-Content -Path $spaFile -Value $spaScript -Encoding UTF8
-    $webProc = Start-Process -PassThru -WindowStyle Minimized -FilePath $Py.Launcher -ArgumentList (
-        @($Py.Args) + @($spaFile, "$WebPort")
-    )
-    $uiUrl = "http://localhost:$WebPort"
+    # Serve the built UI from the API process itself (main.py mounts web/dist).
+    # Same origin, so /api calls just work. A separate static server on
+    # $WebPort cannot proxy /api: every call came back as index.html and the
+    # UI opened on "Something went wrong".
+    $uiUrl = "http://localhost:$ApiPort"
 }
 
 Start-Sleep -Seconds 2
@@ -168,7 +155,6 @@ Write-Host ""
 Write-Host ("  " + ("=" * 64)) -ForegroundColor Green
 Write-Host "  UI    $uiUrl"
 Write-Host "  API   http://localhost:$ApiPort/docs"
-Write-Host "  Also  http://localhost:$ApiPort/  (SPA via FastAPI if dist built)"
 Write-Host ("  " + ("=" * 64)) -ForegroundColor Green
 Write-Host "  Runbook: DEMO.md   Judges: JUDGES.md"
 Write-Host "  Press Ctrl+C in this window to stop, or close it after the demo."

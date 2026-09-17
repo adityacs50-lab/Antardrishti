@@ -33,7 +33,7 @@ make it visibly true.
 make demo
 ```
 
-The browser opens at `http://localhost:5173`. The terminal prints a banner.
+The browser opens at `http://localhost:5173` (`make demo`) or `http://localhost:8000` (`run_prahari_demo.bat` on Windows). The terminal prints a banner.
 
 > **Leave the terminal visible on a second monitor if you have one.** The
 > banner states which extraction path is live and how many reports are loaded.
