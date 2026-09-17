@@ -199,6 +199,10 @@ _STATUS_PATTERNS: tuple[tuple[ControlStatus, tuple[str, ...]], ...] = (
     ),
 )
 
+#: Refuses a cue that directly follows a negation ("was not hospitalized",
+#: "no fracture", "did not require surgery"). Fixed-width lookbehinds only.
+_NOT = r"(?<!\bno )(?<!\bnot )(?<!without )(?<!n't )(?<!require )(?<!needed )"
+
 _INJURY_PATTERNS: tuple[tuple[InjuryOutcome, tuple[str, ...]], ...] = (
     (
         InjuryOutcome.FATALITY,
@@ -207,10 +211,29 @@ _INJURY_PATTERNS: tuple[tuple[InjuryOutcome, tuple[str, ...]], ...] = (
     (
         InjuryOutcome.SERIOUS_INJURY,
         (
-            r"\bserious injury\b", r"\bfracture", r"\bamputat", r"\badmitted in hospital\b",
+            r"\bserious injury\b", r"\bamputat", r"\badmitted in hospital\b",
             r"\bLTI\b", r"\blost time injury\b", r"\breportable injury\b", r"\breferred to\b",
             r"\bunder treatment\b", r"\bevacuated\b", r"\bunconscious\b", r"\bcritical\b",
             r"\bmajor injury\b", r"\bdisabl(?:ing|ement)\b",
+            # -- Real-world wording, from the OSHA Severe Injury Reports benchmark
+            # (claude/prahari-osha-accuracy-benchmark.md). US and plain-English
+            # reporters say "was hospitalized", "fracturing", "broken leg".
+            # Every cue refuses an immediately preceding negation, so "was not
+            # hospitalized" never reads as a serious injury.
+            # "fractur" not "fracture": the old stem missed "fracturing".
+            _NOT + r"\bfractur",
+            _NOT + r"\bhospitali[sz](?:ed|ation)\b",
+            _NOT + r"\b(?:broken|broke (?:his|her|their|both)) (?:\w+ )?"
+            r"(?:bones?|legs?|arms?|wrists?|ankles?|ribs?|hips?|pelvis|neck|back|jaw|"
+            r"nose|skull|vertebra[e]?|fingers?|toes?|feet|foot|hands?|shoulders?|collarbone|femur|tibia)\b",
+            _NOT + r"\blacerations?\b",
+            _NOT + r"\bsurger(?:y|ies)\b",
+            # Burns only when the report itself says they were severe: an OIL
+            # steam-leak "received burn on the forearm" is labelled minor.
+            r"\b(?:second|third|2nd|3rd)[- ]degree burns?\b",
+            r"\b(?:severe|serious|major|extensive) burns?\b",
+            # "crushed his hand", "crush injury" - never "could have crushed".
+            r"(?<!have )(?<!could )\bcrush(?:ed|ing)? (?:injur(?:y|ies)|his|her|their)\b",
         ),
     ),
     (
