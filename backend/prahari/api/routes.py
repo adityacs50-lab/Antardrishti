@@ -443,6 +443,9 @@ def triage(
     include_actual_events: bool = Query(
         default=False, description="Also include HSIF/LSIF, not just uncontrolled potential."
     ),
+    lsr: list[LifeSavingRule] | None = Query(
+        default=None, description="Only reports whose PRIMARY Life-Saving Rule is one of these."
+    ),
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> Page:
@@ -462,6 +465,8 @@ def triage(
     )
     if site:
         stmt = stmt.where(Report.site.in_(site))
+    if lsr:
+        stmt = stmt.where(Verdict.primary_lsr.in_([r.value for r in lsr]))
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = db.execute(

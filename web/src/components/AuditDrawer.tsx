@@ -41,6 +41,7 @@ export function AuditDrawer({
   );
   const [activeRule, setActiveRule] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewMode, setReviewMode] = useState<"confirm" | "override">("confirm");
 
   const report = detail.data;
   const overridden = !!report && report.effective_classification !== report.verdict.classification;
@@ -159,10 +160,10 @@ export function AuditDrawer({
 
         {report && (
           <SheetFooter>
-            <Button variant="confirm" size="sm" onClick={() => setReviewOpen(true)}>
+            <Button variant="confirm" size="sm" onClick={() => { setReviewMode("confirm"); setReviewOpen(true); }}>
               <Check /> Confirm
             </Button>
-            <Button variant="override" size="sm" onClick={() => setReviewOpen(true)}>
+            <Button variant="override" size="sm" onClick={() => { setReviewMode("override"); setReviewOpen(true); }}>
               <PenLine /> Override
             </Button>
           </SheetFooter>
@@ -172,6 +173,7 @@ export function AuditDrawer({
           <ReviewDialog
             report={report}
             open={reviewOpen}
+            initialMode={reviewMode}
             onOpenChange={setReviewOpen}
             onDone={() => {
               detail.refetch();

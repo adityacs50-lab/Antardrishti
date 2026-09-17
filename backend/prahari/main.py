@@ -12,7 +12,7 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -215,6 +215,10 @@ if _FRONTEND_DIST.is_dir():
     @app.get("/{full_path:path}")
     def _spa_fallback(full_path: str) -> FileResponse:
         """SPA deep-links (e.g. /map, /reports/123) and hashed static files."""
+        # An unknown API path is a client bug, not a page: answer it in JSON
+        # instead of handing a fetch() the HTML shell with a 200.
+        if full_path == "api" or full_path.startswith(("api/", "health/")):
+            raise HTTPException(status_code=404, detail="Not Found")
         candidate = (_FRONTEND_DIST / full_path).resolve()
         # Refuse path traversal outside dist.
         if candidate.is_file() and str(candidate).startswith(str(_FRONTEND_DIST.resolve())):

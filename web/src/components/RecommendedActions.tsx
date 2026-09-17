@@ -66,7 +66,14 @@ export function buildRecommendations(
   });
 }
 
-export function RecommendedActions({ className }: { className?: string }) {
+export function RecommendedActions({
+  className,
+  onSelect,
+}: {
+  className?: string;
+  /** Called after a row navigates, e.g. to close the panel it sits in. */
+  onSelect?: () => void;
+}) {
   const navigate = useNavigate();
   const accumulation = useQuery(() => api.accumulation({ window_days: 365 }), []);
   const density = useQuery(() => api.density(), []);
@@ -101,7 +108,7 @@ export function RecommendedActions({ className }: { className?: string }) {
             {recs.map(({ cell, activity, action }, i) => (
               <li key={`${cell.site}-${cell.energy_source}`}>
                 <button
-                  onClick={() => navigate(`/?site=${encodeURIComponent(cell.site)}`)}
+                  onClick={() => { navigate(`/?site=${encodeURIComponent(cell.site)}`); onSelect?.(); }}
                   className="group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-raised"
                 >
                   <span className="tnum mt-0.5 flex size-6 shrink-0 items-center justify-center border border-line-strong text-xs font-semibold text-ink">
@@ -109,10 +116,10 @@ export function RecommendedActions({ className }: { className?: string }) {
                   </span>
                   <span className="min-w-0 flex-1 space-y-1">
                     <span className="block text-xs font-medium text-ink">{action}</span>
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-ink-muted">
-                      <span className="text-ink">{cell.site}</span>
-                      {activity && <span>· {activity}</span>}
-                      <span>· {ENERGY_LABEL[cell.energy_source]}</span>
+                    <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-2xs text-ink-muted">
+                      <span className="font-medium text-ink">{cell.site}</span>
+                      <span>{ENERGY_LABEL[cell.energy_source]}</span>
+                      {activity && <span className="min-w-0 basis-full sm:basis-auto">{activity}</span>}
                       <BandBadge value={cell.band} />
                       {cell.trend === "rising" && (
                         <span className="inline-flex items-center gap-0.5" style={{ color: TREND_TONE.rising }}>

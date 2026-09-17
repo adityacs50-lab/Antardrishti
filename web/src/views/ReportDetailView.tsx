@@ -8,7 +8,7 @@ import { HighlightLegend, HighlightedReport } from "@/components/HighlightedRepo
 import { RuleTrace } from "@/components/RuleTrace";
 import { VerdictPanel } from "@/components/VerdictPanel";
 import { HybridEnginePanel } from "@/components/HybridEnginePanel";
-import { QueryBoundary } from "@/components/StateViews";
+import { EmptyState, QueryBoundary } from "@/components/StateViews";
 import { ReviewDialog } from "@/components/ReviewDialog";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
@@ -17,9 +17,15 @@ import { CLASSIFICATION_LABEL, formatDate } from "@/lib/format";
 export function ReportDetailView() {
   const { id } = useParams();
   const reportId = Number(id);
-  const detail = useQuery(() => api.report(reportId), [reportId]);
+  const validId = Number.isInteger(reportId) && reportId > 0;
+  const detail = useQuery(
+    () => (validId ? api.report(reportId) : Promise.reject(new Error("invalid report id"))),
+    [reportId],
+  );
+  const missing = !validId || detail.status === 404 || detail.status === 422;
   const [activeRule, setActiveRule] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewMode, setReviewMode] = useState<"confirm" | "override">("confirm");
 
   const report = detail.data;
   const overridden =
@@ -34,6 +40,12 @@ export function ReportDetailView() {
         <ArrowLeft className="size-3.5" /> Back to triage
       </Link>
 
+      {missing && !detail.loading ? (
+        <EmptyState
+          title={`Report ${id ?? ""} does not exist`}
+          hint="It may have been removed, or the link is wrong. Open it again from the Triage Queue."
+        />
+      ) : (
       <QueryBoundary
         loading={detail.loading}
         offline={detail.offline}
@@ -57,10 +69,10 @@ export function ReportDetailView() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="confirm" size="sm" onClick={() => setReviewOpen(true)}>
+                <Button variant="confirm" size="sm" onClick={() => { setReviewMode("confirm"); setReviewOpen(true); }}>
                   <Check /> Confirm
                 </Button>
-                <Button variant="override" size="sm" onClick={() => setReviewOpen(true)}>
+                <Button variant="override" size="sm" onClick={() => { setReviewMode("override"); setReviewOpen(true); }}>
                   <PenLine /> Override
                 </Button>
               </div>
@@ -77,7 +89,7 @@ export function ReportDetailView() {
               </div>
             )}
 
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
               <div className="space-y-4">
                 <Card>
                   <CardHeader className="space-y-2">
@@ -121,7 +133,7 @@ export function ReportDetailView() {
                 </Card>
               </div>
 
-              <div className="space-y-4 lg:sticky lg:top-[76px] lg:self-start">
+              <div className="order-first space-y-4 lg:order-none">
                 <VerdictPanel verdict={report.verdict} />
                 <HybridEnginePanel verdict={report.verdict} spans={report.evidence_spans} stacked />
 
@@ -166,12 +178,17 @@ export function ReportDetailView() {
             <ReviewDialog
               report={report}
               open={reviewOpen}
+              initialMode={reviewMode}
               onOpenChange={setReviewOpen}
-              onDone={detail.refetch}
+              onDone={() => {
+                detail.refetch();
+                window.dispatchEvent(new Event("prahari:data-changed"));
+              }}
             />
           </>
         )}
       </QueryBoundary>
+      )}
     </div>
   );
 }

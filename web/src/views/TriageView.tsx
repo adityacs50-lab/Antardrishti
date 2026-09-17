@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle2, Filter, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Filter, TriangleAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
@@ -11,14 +11,13 @@ import { NewReportDialog } from "@/components/NewReportDialog";
 import { QueryBoundary } from "@/components/StateViews";
 import { KpiBar } from "@/components/KpiBar";
 import { AuditDrawer } from "@/components/AuditDrawer";
-import { EngineMetricsCard } from "@/components/EngineMetricsCard";
 import { ExportForHSE } from "@/components/ExportForHSE";
-import { RecommendedActions } from "@/components/RecommendedActions";
+import { InsightsBar } from "@/components/InsightsBar";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
-import { CLASSIFICATION_LABEL, CLASSIFICATION_MEANING, formatDate } from "@/lib/format";
+import { CLASSIFICATION_LABEL, CLASSIFICATION_MEANING, LSR_LABEL, formatDate } from "@/lib/format";
 import { CLASSIFICATION_TONE } from "@/lib/theme";
-import type { ReportSummary } from "@/types/api";
+import type { LifeSavingRule, ReportSummary } from "@/types/api";
 
 const PAGE_SIZE = 25;
 
@@ -82,6 +81,29 @@ function ActivityExcerptCell({ report }: { report: ReportSummary }) {
   );
 }
 
+/** Below `md` the five-column table cannot fit; the same facts stack as a card. */
+function QueueCard({ report, onAudit }: { report: ReportSummary; onAudit: (id: number) => void }) {
+  return (
+    <li className="space-y-2.5 px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <PriorityCell report={report} />
+        <Button variant="outline" size="sm" onClick={() => onAudit(report.id)}>
+          Audit
+        </Button>
+      </div>
+      <ActivityExcerptCell report={report} />
+      <div className="flex flex-wrap items-center gap-1.5">
+        <LsrBadge
+          value={report.primary_lsr}
+          energySource={report.energy_source}
+          classification={report.classification}
+        />
+        <EnergyBarrierBadge energySource={report.energy_source} controlStatus={report.control_status} />
+      </div>
+    </li>
+  );
+}
+
 function QueueRow({ report, onAudit }: { report: ReportSummary; onAudit: (id: number) => void }) {
   return (
     <tr className="border-b border-line transition-colors last:border-b-0 hover:bg-surface-raised">
@@ -113,6 +135,9 @@ function QueueRow({ report, onAudit }: { report: ReportSummary; onAudit: (id: nu
 export function TriageView() {
   const [params, setParams] = useSearchParams();
   const site = params.get("site") ?? "";
+  // Set by "View reports under this rule" on the Life-Saving Rules screen.
+  const lsrParam = params.get("lsr");
+  const lsr = lsrParam && lsrParam in LSR_LABEL ? (lsrParam as LifeSavingRule) : "";
   const [includeEvents, setIncludeEvents] = useState(false);
   const [page, setPage] = useState(0);
   const [auditId, setAuditId] = useState<number | null>(null);
@@ -121,13 +146,14 @@ export function TriageView() {
   const query = useMemo(
     () => ({
       site: site ? [site] : undefined,
+      lsr: lsr ? [lsr] : undefined,
       include_actual_events: includeEvents,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
     }),
-    [site, includeEvents, page],
+    [site, lsr, includeEvents, page],
   );
-  const triage = useQuery(() => api.triage(query), [site, includeEvents, page]);
+  const triage = useQuery(() => api.triage(query), [site, lsr, includeEvents, page]);
 
   const total = triage.data?.total ?? 0;
   const shown = triage.data?.items.length ?? 0;
@@ -154,12 +180,9 @@ export function TriageView() {
           single row. */}
       <KpiBar />
 
-      {/* Why trust the queue (measured, reproducible) and what to do about
-          it (deterministic ordering of the Accumulation Index). */}
-      <div className="grid gap-3 xl:grid-cols-5 xl:items-start">
-        <EngineMetricsCard className="animate-fade-in xl:col-span-3" />
-        <RecommendedActions className="animate-fade-in xl:col-span-2" />
-      </div>
+      {/* One slim row: measured engine numbers + the most urgent barrier
+          action. Full detail opens in a side panel. */}
+      <InsightsBar />
 
       <section className="space-y-3">
         <header className="flex flex-wrap items-center justify-between gap-3">
@@ -168,7 +191,7 @@ export function TriageView() {
             Triage Queue
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <ExportForHSE site={site} includeEvents={includeEvents} total={total} />
+            <ExportForHSE site={site} lsr={lsr || undefined} includeEvents={includeEvents} total={total} />
             <BulkImportDialog onImported={refreshAll} />
             <NewReportDialog
               sites={meta.data?.sites ?? []}
@@ -197,6 +220,22 @@ export function TriageView() {
               <option value="">All sites</option>
               {meta.data?.sites.map((s) => <option key={s} value={s}>{s}</option>)}
             </Select>
+            {lsr && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = new URLSearchParams(params);
+                  next.delete("lsr");
+                  setParams(next, { replace: true });
+                  setPage(0);
+                }}
+                className="inline-flex h-8 items-center gap-1.5 border border-accent/40 bg-accent/10 px-2.5 text-2xs text-ink transition-colors hover:bg-accent/20"
+                aria-label={`Remove rule filter: ${LSR_LABEL[lsr]}`}
+              >
+                Rule: {LSR_LABEL[lsr]}
+                <X className="size-3" />
+              </button>
+            )}
             <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-2xs text-ink-faint">
               <input
                 type="checkbox"
@@ -217,10 +256,19 @@ export function TriageView() {
             error={triage.error}
             empty={shown === 0}
             onRetry={triage.refetch}
-            emptyTitle="No SIF potential in the queue"
-            emptyHint="Either nothing qualifies, or the database is empty. Seed it with: python -m prahari.cli seed --limit 800"
+            emptyTitle={site || lsr ? "No reports match these filters" : "No SIF potential in the queue"}
+            emptyHint={
+              site || lsr
+                ? "Clear the site or rule filter, or tick “Include actual events”."
+                : "Nothing qualifies yet. Add a report or bulk-import a CSV export to get started."
+            }
           >
-            <div className="overflow-x-auto">
+            <ul className="divide-y divide-line md:hidden">
+              {triage.data?.items.map((r) => (
+                <QueueCard key={r.id} report={r} onAudit={setAuditId} />
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-line-strong text-2xs uppercase tracking-wide text-ink-faint">

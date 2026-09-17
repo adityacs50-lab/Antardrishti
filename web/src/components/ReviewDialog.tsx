@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,19 +21,36 @@ const CLASSES: SifClassification[] = [
  * moves *where* the audit trail is reached, never what it does.
  */
 export function ReviewDialog({
-  report, open, onOpenChange, onDone,
+  report, open, onOpenChange, onDone, initialMode = "confirm",
 }: {
   report: ReportDetail;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onDone: () => void;
+  /** Which decision the dialog opens on — the button the reviewer pressed. */
+  initialMode?: "confirm" | "override";
 }) {
-  const [mode, setMode] = useState<"confirm" | "override">("confirm");
+  const [mode, setMode] = useState<"confirm" | "override">(initialMode);
   const [role, setRole] = useState("HSE Officer");
   const [reason, setReason] = useState("");
   const [corrected, setCorrected] = useState<SifClassification>(report.verdict.classification);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+
+  // Every opening starts clean, on the decision the reviewer chose, for the
+  // report currently on screen.
+  useEffect(() => {
+    if (!open) return;
+    setMode(initialMode);
+    setReason("");
+    setError(undefined);
+    setCorrected(report.verdict.classification);
+  }, [open, initialMode, report.id, report.verdict.classification]);
+
+  // An override has to change something, or it is a confirm in disguise and
+  // would distort the reviewer-agreement figure.
+  const unchanged = mode === "override" && corrected === report.verdict.classification;
+  const reasonOk = reason.trim().length >= 3;
 
   const submit = async () => {
     setBusy(true);
@@ -46,7 +63,6 @@ export function ReviewDialog({
         ...(mode === "override" ? { corrected_classification: corrected } : {}),
       });
       onOpenChange(false);
-      setReason("");
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -94,7 +110,9 @@ export function ReviewDialog({
               <span className="text-2xs text-ink-muted">Corrected classification</span>
               <Select value={corrected} onChange={(e) => setCorrected(e.target.value as SifClassification)}>
                 {CLASSES.map((c) => (
-                  <option key={c} value={c}>{CLASSIFICATION_LABEL[c]}</option>
+                  <option key={c} value={c}>
+                    {CLASSIFICATION_LABEL[c]}{c === report.verdict.classification ? " (engine)" : ""}
+                  </option>
                 ))}
               </Select>
             </label>
@@ -102,7 +120,7 @@ export function ReviewDialog({
 
           <label className="block space-y-1">
             <span className="text-2xs text-ink-muted">
-              Reason {mode === "override" && <span className="text-status-warning">(required)</span>}
+              Reason <span className="text-ink-faint">(required, at least 3 characters)</span>
             </span>
             <Textarea
               rows={3}
@@ -116,7 +134,13 @@ export function ReviewDialog({
             />
           </label>
 
-          {error && <p className="text-xs text-status-critical">{error}</p>}
+          {unchanged && (
+            <p className="text-2xs text-status-warning">
+              Pick a classification different from the engine's{" "}
+              ({CLASSIFICATION_LABEL[report.verdict.classification]}) to override.
+            </p>
+          )}
+          {error && <p role="alert" className="text-xs text-status-critical">{error}</p>}
         </div>
 
         <DialogFooter>
@@ -124,7 +148,7 @@ export function ReviewDialog({
           <Button
             size="sm"
             variant={mode === "confirm" ? "confirm" : "override"}
-            disabled={busy || reason.trim().length < 3}
+            disabled={busy || !reasonOk || unchanged}
             onClick={submit}
           >
             {busy ? "Saving…" : mode === "confirm" ? "Confirm verdict" : "Save override"}

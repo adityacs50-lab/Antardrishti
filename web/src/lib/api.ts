@@ -49,10 +49,26 @@ async function request<T>(path: string, init?: RequestInit, timeoutMs = 30000): 
   clearTimeout(timer);
 
   if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    // A gateway error, or a dev-proxy 500 with an empty body, means the API
+    // process itself is not answering. Report that as "offline" (no status)
+    // so the UI shows the backend-unreachable state, not a generic error.
+    if ([502, 503, 504].includes(res.status) || (res.status === 500 && !body.trim())) {
+      throw new ApiError(
+        "Cannot reach the prahari API. Start it with: uvicorn prahari.main:app --reload",
+      );
+    }
     let detail: unknown;
-    try { detail = (await res.json())?.detail; } catch { /* non-JSON error body */ }
+    try { detail = JSON.parse(body)?.detail; } catch { /* non-JSON error body */ }
     throw new ApiError(
-      typeof detail === "string" ? detail : `${res.status} ${res.statusText}`,
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail) && typeof detail[0]?.msg === "string"
+          ? // FastAPI validation error: show the first field problem in words.
+            `${String(detail[0].msg).replace(/^Value error, /, "")}${
+              Array.isArray(detail[0].loc) ? ` (${detail[0].loc.slice(1).join(".")})` : ""
+            }`
+          : `${res.status} ${res.statusText}`,
       res.status,
       detail,
     );
@@ -98,7 +114,15 @@ export const api = {
     }>("/health"),
   meta: () => request<Meta>("/api/meta"),
 
-  triage: (p: { site?: string[]; include_actual_events?: boolean; limit?: number; offset?: number } = {}) =>
+  triage: (
+    p: {
+      site?: string[];
+      lsr?: LifeSavingRule[];
+      include_actual_events?: boolean;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) =>
     request<Page<ReportSummary>>(`/api/triage${qs(p)}`),
 
   reports: (p: ReportFilters = {}) => request<Page<ReportSummary>>(`/api/reports${qs(p)}`),

@@ -44,7 +44,7 @@ function EnergyTab({ o, q }: { o: Ontology; q: string }) {
   );
   if (!rows.length) return <NoMatch />;
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {rows.map((e) => {
         const phrases = q ? e.trigger_phrases.filter((p) => p.includes(q)) : e.trigger_phrases.slice(0, 10);
         return (
@@ -145,7 +145,7 @@ function LsrTab({ o, q }: { o: Ontology; q: string }) {
   return (
     <div className="space-y-3">
       {rows.length === 0 ? <NoMatch /> : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((r) => (
             <Card key={r.value} className="animate-fade-in">
               <CardHeader>
@@ -247,7 +247,7 @@ function RulesTab({ o, q }: { o: Ontology; q: string }) {
   const rows = o.rules.filter((r) => hit(q, r.id, r.stage, r.summary));
   const cls = o.classifications.filter((c) => hit(q, c.label, c.value, c.definition));
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle>Named rules<Count n={o.rules.length} /></CardTitle>

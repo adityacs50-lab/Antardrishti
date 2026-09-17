@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { LoadingRows } from "@/components/StateViews";
 import { BookOpen, FlaskConical, Grid3x3, ListChecks, Radar, ShieldCheck, ShieldOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -19,12 +20,27 @@ const PRIMARY_NAV = [
 ];
 
 const SECONDARY_NAV = [
-  { to: "/map", label: "Patterns", icon: Grid3x3 },
-  { to: "/rules", label: "Rules", icon: ShieldCheck },
+  { to: "/map", label: "Precursor Map", icon: Grid3x3 },
+  { to: "/rules", label: "Life-Saving Rules", icon: ShieldCheck },
   { to: "/ontology", label: "Ontology", icon: BookOpen },
 ];
 
+const TITLES: [RegExp, string][] = [
+  [/^\/$/, "Triage Queue"],
+  [/^\/sandbox/, "Live Incident Sandbox"],
+  [/^\/reports\//, "Report"],
+  [/^\/map/, "Precursor Map"],
+  [/^\/rules/, "Life-Saving Rules"],
+  [/^\/ontology/, "Ontology"],
+];
+
 export function AppShell() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const page = TITLES.find(([re]) => re.test(pathname))?.[1] ?? "Not found";
+    document.title = `${page} · prahari`;
+  }, [pathname]);
+
   const health = useQuery(() => api.health(), []);
   // Prefer last successful health payload while a refetch is in flight so the
   // banner does not flicker "Connecting…" / empty counts during navigation.
@@ -172,7 +188,11 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto max-w-[1600px] px-5 py-6">
-        <Outlet />
+        {/* Keyed by path so a failed or slow lazy screen never leaves the
+            previous screen's fallback on the next one. */}
+        <Suspense key={pathname} fallback={<LoadingRows rows={4} />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );

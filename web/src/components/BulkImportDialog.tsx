@@ -6,7 +6,8 @@ import {
 } from "@/components/ui/dialog";
 import { api, ApiError } from "@/lib/api";
 import { chunkUploadFile } from "@/lib/chunkUpload";
-import type { BulkResult } from "@/types/api";
+import { CLASSIFICATION_LABEL } from "@/lib/format";
+import type { BulkResult, SifClassification } from "@/types/api";
 
 function mergeResults(a: BulkResult, b: BulkResult): BulkResult {
   const counts: Record<string, number> = { ...a.classification_counts };
@@ -100,7 +101,8 @@ export function BulkImportDialog({ onImported }: Props) {
       open={open}
       onOpenChange={(next: boolean) => {
         setOpen(next);
-        if (!next) reset();
+        // Reset on open: "Done" closes via setOpen and skips this handler.
+        if (next) reset();
       }}
     >
       <DialogTrigger asChild>
@@ -171,7 +173,7 @@ export function BulkImportDialog({ onImported }: Props) {
               {Object.keys(result.classification_counts).length > 0 && (
                 <p className="text-ink-muted">
                   {Object.entries(result.classification_counts)
-                    .map(([k, v]) => `${k}: ${v}`)
+                    .map(([k, v]) => `${CLASSIFICATION_LABEL[k as SifClassification] ?? k}: ${v}`)
                     .join(" · ")}
                 </p>
               )}

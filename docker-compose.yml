@@ -27,15 +27,15 @@ services:
     build:
       context: ./web
       dockerfile: ../docker/frontend.Dockerfile
+      # Baked into the bundle at build time. The browser (on the host) calls
+      # the API, so this is the host-facing address, not the service name.
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
     # note: dockerfile path is resolved relative to the build context above
     container_name: prahari-frontend
     ports:
       - "5173:5173"
-    volumes:
-      - ./web:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+    # No source bind-mount here: it would hide the image's built dist/.
     depends_on:
       - backend
     networks:

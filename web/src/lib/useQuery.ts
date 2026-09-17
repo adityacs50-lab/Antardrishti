@@ -6,6 +6,8 @@ export interface QueryState<T> {
   error: string | undefined;
   loading: boolean;
   offline: boolean;
+  /** HTTP status of the last failure, when the API answered at all. */
+  status: number | undefined;
   refetch: () => void;
 }
 
@@ -23,6 +25,7 @@ export function useQuery<T>(fn: () => Promise<T>, deps: unknown[] = []): QuerySt
   const [data, setData] = useState<T>();
   const [error, setError] = useState<string>();
   const [offline, setOffline] = useState(false);
+  const [status, setStatus] = useState<number>();
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
   const generation = useRef(0);
@@ -39,12 +42,14 @@ export function useQuery<T>(fn: () => Promise<T>, deps: unknown[] = []): QuerySt
         setData(result);
         setError(undefined);
         setOffline(false);
+        setStatus(undefined);
       })
       .catch((err: unknown) => {
         if (gen !== generation.current) return;
         const isApi = err instanceof ApiError;
         setError(err instanceof Error ? err.message : String(err));
         setOffline(isApi && err.status === undefined);
+        setStatus(isApi ? err.status : undefined);
         setData(undefined);
       })
       .finally(() => {
@@ -54,5 +59,5 @@ export function useQuery<T>(fn: () => Promise<T>, deps: unknown[] = []): QuerySt
   }, [...deps, nonce]);
 
   const refetch = useCallback(() => setNonce((n) => n + 1), []);
-  return { data, error, loading, offline, refetch };
+  return { data, error, loading, offline, status, refetch };
 }

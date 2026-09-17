@@ -110,6 +110,8 @@ export function KpiBar() {
             <span className="inline-flex items-center gap-1.5">
               index {top.index.toFixed(1)} <BandBadge value={top.band} />
             </span>
+          ) : accumulation.error ? (
+            "Unavailable"
           ) : (
             "No accumulating precursors"
           )

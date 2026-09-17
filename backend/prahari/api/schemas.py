@@ -13,7 +13,7 @@ is what people type, and it filters on exactly this field.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -89,6 +89,24 @@ class ReportIn(BaseModel):
         v = v.strip()
         if not v:
             raise ValueError("text must not be blank")
+        return v
+
+    @field_validator("site")
+    @classmethod
+    def _strip_site(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("site must not be blank")
+        return v
+
+    @field_validator("date")
+    @classmethod
+    def _not_in_future(cls, v: date) -> date:
+        # One day of slack: the reporter's calendar may be ahead of the
+        # server's (IST vs UTC). Anything later would sit at the top of every
+        # recency sort and distort the accumulation window.
+        if v > date.today() + timedelta(days=1):
+            raise ValueError("date must not be in the future")
         return v
 
 

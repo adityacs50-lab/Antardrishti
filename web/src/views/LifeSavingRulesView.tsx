@@ -87,7 +87,7 @@ export function LifeSavingRulesView() {
         </p>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Distribution across the nine rules</CardTitle>
@@ -165,7 +165,7 @@ export function LifeSavingRulesView() {
                       <span className="ml-auto cursor-help text-2xs text-ink-faint underline decoration-dotted underline-offset-2">
                         {lsr.data.precursor_assigned} of {lsr.data.precursor_total} precursors carry
                         an IOGP rule tag
-                        {lsr.data.unassigned > 0 && ` · ${lsr.data.unassigned} reports untagged`}
+                        {lsr.data.unassigned > 0 && ` · ${lsr.data.unassigned} of ${lsr.data.total} reports untagged`}
                       </span>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-sm">

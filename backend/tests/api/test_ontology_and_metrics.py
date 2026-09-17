@@ -43,3 +43,44 @@ def test_engine_metrics_endpoint_reports_agreement_from_reviews(api):
     assert 0 <= pd["precision"] <= 1 and 0 <= pd["recall"] <= 1
     agreement = body["reviewer_agreement"]
     assert agreement["confirmed"] + agreement["overridden"] == agreement["reviewed_reports"]
+
+
+def test_future_dated_report_is_rejected(api):
+    from datetime import date, timedelta
+
+    r = api.post(
+        "/api/reports",
+        json={"text": "Guard missing on pump.", "site": "Moran",
+              "date": (date.today() + timedelta(days=30)).isoformat()},
+    )
+    assert r.status_code == 422
+
+
+def test_blank_site_is_rejected(api):
+    from datetime import date
+
+    r = api.post("/api/reports", json={"text": "x y z", "site": "   ", "date": date.today().isoformat()})
+    assert r.status_code == 422
+
+
+def test_unknown_api_path_is_json_404_not_the_spa(api):
+    r = api.get("/api/definitely-not-a-route")
+    assert r.status_code == 404
+    assert r.headers["content-type"].startswith("application/json")
+
+
+def test_triage_filters_by_primary_life_saving_rule(api):
+    from datetime import date
+
+    text = (
+        "The machine guard was missing from the pumping unit drive and the unit was not "
+        "isolated at the panel. The belt started on auto. No injury to any personnel."
+    )
+    r = api.post("/api/reports", json={"text": text, "site": "Moran", "date": date.today().isoformat()})
+    assert r.status_code == 201
+    lsr = r.json()["verdict"]["primary_lsr"]
+    assert lsr
+    hit = api.get("/api/triage", params={"lsr": lsr}).json()
+    assert hit["total"] == 1
+    other = "driving" if lsr != "driving" else "hot_work"
+    assert api.get("/api/triage", params={"lsr": other}).json()["total"] == 0

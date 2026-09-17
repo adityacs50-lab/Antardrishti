@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import {
   CLASSIFICATION_LABEL, CONTROL_STATUS_LABEL, ENERGY_LABEL, LSR_LABEL, formatDate,
 } from "@/lib/format";
-import type { ReportSummary } from "@/types/api";
+import type { LifeSavingRule, ReportSummary } from "@/types/api";
 
 /**
  * Export for HSE — the Triage Queue as it is currently filtered, every page,
@@ -23,12 +23,17 @@ import type { ReportSummary } from "@/types/api";
 const PAGE = 500; // the API's max page size
 const HARD_CAP = 5000;
 
-async function fetchAll(site: string, includeEvents: boolean): Promise<{ items: ReportSummary[]; total: number }> {
+async function fetchAll(
+  site: string,
+  lsr: LifeSavingRule | undefined,
+  includeEvents: boolean,
+): Promise<{ items: ReportSummary[]; total: number }> {
   const items: ReportSummary[] = [];
   let total = 0;
   for (let offset = 0; offset < HARD_CAP; offset += PAGE) {
     const page = await api.triage({
       site: site ? [site] : undefined,
+      lsr: lsr ? [lsr] : undefined,
       include_actual_events: includeEvents,
       limit: PAGE,
       offset,
@@ -123,17 +128,27 @@ function printableHtml(items: ReportSummary[], scope: string) {
 </body></html>`;
 }
 
-export function ExportForHSE({ site, includeEvents, total }: { site: string; includeEvents: boolean; total: number }) {
+export function ExportForHSE({
+  site,
+  lsr,
+  includeEvents,
+  total,
+}: {
+  site: string;
+  lsr?: LifeSavingRule;
+  includeEvents: boolean;
+  total: number;
+}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<"csv" | "pdf" | null>(null);
   const [error, setError] = useState<string>();
-  const scope = `${site || "All sites"} · ${includeEvents ? "precursors + actual events" : "precursors (PSIF, Exposure)"}`;
+  const scope = `${site || "All sites"}${lsr ? ` · ${LSR_LABEL[lsr]}` : ""} · ${includeEvents ? "precursors + actual events" : "precursors (PSIF, Exposure)"}`;
 
   const exportCsv = async () => {
     setBusy("csv");
     setError(undefined);
     try {
-      const { items } = await fetchAll(site, includeEvents);
+      const { items } = await fetchAll(site, lsr, includeEvents);
       const body = [COLUMNS.map((c) => c.head), ...items.map((r) => COLUMNS.map((c) => c.get(r)))]
         .map((row) => row.map(csvCell).join(","))
         .join("\r\n");
@@ -158,7 +173,7 @@ export function ExportForHSE({ site, includeEvents, total }: { site: string; inc
     setBusy("pdf");
     setError(undefined);
     try {
-      const { items } = await fetchAll(site, includeEvents);
+      const { items } = await fetchAll(site, lsr, includeEvents);
       win.document.open();
       win.document.write(printableHtml(items, scope));
       win.document.close();
@@ -172,7 +187,7 @@ export function ExportForHSE({ site, includeEvents, total }: { site: string; inc
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(undefined); }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setError(undefined); }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" disabled={total === 0}>
           <Download /> Export for HSE
