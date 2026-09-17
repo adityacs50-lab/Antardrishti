@@ -2,10 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CLASSIFICATION_LABEL, CLASSIFICATION_MEANING, CONTROL_STATUS_LABEL,
-  LSR_SHORT, LSR_LABEL, BAND_LABEL,
+  ENERGY_LABEL, LSR_SHORT, LSR_LABEL, BAND_LABEL,
 } from "@/lib/format";
 import { BAND_TONE, CLASSIFICATION_TONE, CONTROL_TONE, STATUS } from "@/lib/theme";
-import type { Band, ControlStatus, LifeSavingRule, SifClassification } from "@/types/api";
+import type { Band, ControlStatus, EnergySource, LifeSavingRule, SifClassification } from "@/types/api";
 import { cn } from "@/lib/utils";
 
 export function ClassificationBadge({ value, className }: { value: SifClassification; className?: string }) {
@@ -84,6 +84,43 @@ export function LsrBadge({
         </span>
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">{why}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
+ * "Energy & Barrier Status" — one merged badge for the simplified Triage
+ * Queue table. The row used to carry a separate control badge, an energy
+ * label and an LSR tag; this collapses the two most decision-relevant of
+ * those (what could hurt someone, and whether the barrier held) into a
+ * single glanceable chip, coloured by the barrier — the more actionable of
+ * the two — with the full breakdown still one hover (or an Audit click) away.
+ */
+export function EnergyBarrierBadge({
+  energySource,
+  controlStatus,
+}: {
+  energySource: EnergySource | null;
+  controlStatus: ControlStatus;
+}) {
+  const tone = CONTROL_TONE[controlStatus];
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <Badge tone={tone} dot className="whitespace-nowrap">
+            {energySource ? ENERGY_LABEL[energySource] : "No energy"}
+            <span className="opacity-50">·</span>
+            {CONTROL_STATUS_LABEL[controlStatus]}
+          </Badge>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <strong>Energy &amp; barrier status.</strong>{" "}
+        {energySource ? `${ENERGY_LABEL[energySource]} hazard` : "No energy source identified"} ·
+        the direct control is <strong>{CONTROL_STATUS_LABEL[controlStatus].toLowerCase()}</strong>.
+        Open Audit for the full rule breakdown.
+      </TooltipContent>
     </Tooltip>
   );
 }

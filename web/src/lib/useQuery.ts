@@ -14,6 +14,10 @@ export interface QueryState<T> {
  * that could mask an unreachable backend. `offline` is true only when the API
  * could not be reached at all, which the UI surfaces prominently rather than
  * papering over with sample data.
+ *
+ * Uses a generation counter (not a shared `alive` boolean) so React Strict Mode
+ * remounts and fast route changes cannot drop the latest successful response
+ * or leave the shell stuck on "Connecting…".
  */
 export function useQuery<T>(fn: () => Promise<T>, deps: unknown[] = []): QueryState<T> {
   const [data, setData] = useState<T>();
@@ -21,32 +25,31 @@ export function useQuery<T>(fn: () => Promise<T>, deps: unknown[] = []): QuerySt
   const [offline, setOffline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
-  const alive = useRef(true);
+  const generation = useRef(0);
   const fnRef = useRef(fn);
   fnRef.current = fn;
 
   useEffect(() => {
-    alive.current = true;
+    const gen = ++generation.current;
     setLoading(true);
     fnRef
       .current()
       .then((result) => {
-        if (!alive.current) return;
+        if (gen !== generation.current) return;
         setData(result);
         setError(undefined);
         setOffline(false);
       })
       .catch((err: unknown) => {
-        if (!alive.current) return;
+        if (gen !== generation.current) return;
         const isApi = err instanceof ApiError;
         setError(err instanceof Error ? err.message : String(err));
         setOffline(isApi && err.status === undefined);
         setData(undefined);
       })
-      .finally(() => alive.current && setLoading(false));
-    return () => {
-      alive.current = false;
-    };
+      .finally(() => {
+        if (gen === generation.current) setLoading(false);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, nonce]);
 

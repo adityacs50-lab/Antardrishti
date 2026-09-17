@@ -3,32 +3,27 @@
 @tailwind utilities;
 
 /*
-  prahari design tokens — dark, industrial, low-chroma.
-
-  Colour choices are not taste. The categorical and highlight hues below were
-  validated with the dataviz palette validator against the card surface
-  (#131A22): lightness band, chroma floor, CVD separation, normal-vision floor
-  and contrast all pass. Do not substitute a hue without re-running it.
-
-  This app renders with the network off: no web fonts, no CDN, no analytics.
+  prahari — IBM Carbon inverse (primary). See ../../DESIGN.md
+  Source tokens: awesome-design-md/ibm (inverse-canvas / IBM Blue).
+  Status / series / cue hues remain CVD-validated in theme.ts.
+  Offline: no web fonts, no CDN, no analytics.
 */
 
 @layer base {
   :root {
-    --bg: 210 30% 6%;          /* #0B0F14 page plane   */
-    --surface-0: 212 28% 8%;   /* #0E141B sunken       */
-    --surface-1: 211 27% 11%;  /* #131A22 card         */
-    --surface-2: 213 28% 14%;  /* #1A2330 raised       */
-    --border: 212 25% 20%;     /* #243040              */
-    --border-strong: 213 27% 27%;
-    --text-1: 210 24% 93%;     /* #E6EDF3 primary ink  */
-    --text-2: 209 17% 69%;     /* #9FB0C0 secondary    */
-    /* Tertiary ink. Raised from 49% to 60% lightness after a projector test:
-       at 49% this cleared WCAG AA on a monitor but disappeared entirely on a
-       washed-out beamer, which is the only screen that matters on a demo
-       floor. 60% keeps it clearly subordinate to --text-2 (69%) while
-       reaching ~5.6:1 on the card surface. */
-    --text-3: 209 14% 60%;     /* #8695A6 muted        */
+    /* IBM inverse-canvas family */
+    --bg: 0 0% 9%;             /* #161616 */
+    --surface-0: 0 0% 11%;     /* #1c1c1c */
+    --surface-1: 0 0% 15%;     /* #262626 */
+    --surface-2: 0 0% 20%;     /* #333333 */
+    --border: 0 0% 22%;        /* #393939 */
+    --border-strong: 0 0% 44%; /* #6f6f6f */
+    --text-1: 0 0% 96%;        /* #f4f4f4 */
+    --text-2: 0 0% 78%;        /* #c6c6c6 */
+    --text-3: 0 0% 66%;        /* #a8a8a8 */
+    /* IBM Blue — sole brand accent */
+    --accent: 217 99% 53%;     /* #0f62fe */
+    --accent-hover: 219 100% 45%; /* #0050e6 */
   }
 
   * { @apply border-line; }
@@ -37,50 +32,48 @@
 
   body {
     @apply bg-bg text-ink antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-feature-settings: "tnum";
+    letter-spacing: 0.01em;
   }
 
-  /* Tabular figures wherever numbers must align vertically. */
   .tnum { font-variant-numeric: tabular-nums; }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: hsl(var(--surface-0)); }
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border-strong));
-    border-radius: 6px;
+    border-radius: 0;
     border: 2px solid hsl(var(--surface-0));
   }
   ::-webkit-scrollbar-thumb:hover { background: hsl(var(--text-3)); }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-series-1/70 ring-offset-2 ring-offset-bg;
+    @apply outline-none ring-2 ring-offset-2 ring-offset-bg;
+    --tw-ring-color: hsl(var(--accent));
   }
 }
 
 @layer components {
-  /* Evidence-span highlighting. Each hue also carries a distinct underline
-     style, so identity never rests on colour alone (CVD / print / forced
-     colours). */
   .cue {
-    @apply rounded-[3px] px-[2px] py-[1px] transition-colors cursor-default;
+    @apply rounded-none px-[2px] py-[1px] transition-colors cursor-default;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
   }
   .grid-hairline {
     background-image:
-      linear-gradient(to right, hsl(var(--border) / 0.35) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border) / 0.35) 1px, transparent 1px);
+      linear-gradient(to right, hsl(var(--border) / 0.45) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.45) 1px, transparent 1px);
     background-size: 32px 32px;
+  }
+  /* Carbon-flat alert / thesis bar — left IBM blue edge */
+  .hero-strip {
+    @apply flex flex-wrap items-center gap-3 border border-line bg-surface px-4 py-3;
+    border-radius: 0;
+    border-left: 4px solid hsl(var(--accent));
   }
 }
 
-/* Evidence-span colours live OUTSIDE @layer components deliberately.
-   HighlightedReport builds these class names dynamically (`cue-${kind}`), so
-   Tailwind's content scanner never sees the literal strings "cue-energy",
-   "cue-control" or "cue-context" and purges them out of the components layer.
-   The spans then render with no colour at all - which silently breaks the one
-   screen the whole product is pitched on. Plain top-level CSS is emitted
-   verbatim and cannot be purged. Do not move these back into a @layer. */
+/* Evidence-span colours OUTSIDE @layer — do not purge. */
 .cue-energy {
   background-color: rgb(57 135 229 / 0.18);
   border-bottom: 2px solid #3987e5;
@@ -94,6 +87,6 @@
   border-bottom: 2px dotted #199e70;
 }
 .cue-active {
-  box-shadow: 0 0 0 2px rgb(233 237 241 / 0.4);
+  box-shadow: 0 0 0 2px rgb(244 244 244 / 0.35);
   filter: brightness(1.35);
 }

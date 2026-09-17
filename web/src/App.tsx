@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppShell } from "@/components/AppShell";
 import { TriageView } from "@/views/TriageView";
+import { SandboxView } from "@/views/SandboxView";
 import { ReportDetailView } from "@/views/ReportDetailView";
 import { PrecursorMapView } from "@/views/PrecursorMapView";
 import { LifeSavingRulesView } from "@/views/LifeSavingRulesView";
@@ -12,6 +13,7 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <TriageView /> },
+      { path: "sandbox", element: <SandboxView /> },
       { path: "reports/:id", element: <ReportDetailView /> },
       { path: "map", element: <PrecursorMapView /> },
       { path: "rules", element: <LifeSavingRulesView /> },

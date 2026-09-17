@@ -14,6 +14,8 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from prahari.api.routes import router
 from prahari.db.session import create_all
@@ -197,10 +199,24 @@ def health() -> dict[str, object]:
     }
 
 
-# Serve the built React app (web/dist) directly from this same FastAPI app
-# when it has been built — e.g. by a platform build step (Vercel) or a local
-# `make build`/`make demo`. API routes above always take priority, so this is
-# purely additive: if web/dist doesn't exist (a bare `make api` for backend
-# dev), nothing changes.
+# Serve the built React app (web/dist) from this same FastAPI process when it
+# has been built (`npm run build` in web/, or a platform build step). API
+# routes above always take priority. If web/dist is missing (bare `make api`),
+# nothing changes — the API still boots.
 if _FRONTEND_DIST.is_dir():
-    app.frontend("/", directory=str(_FRONTEND_DIST))
+    _assets = _FRONTEND_DIST / "assets"
+    if _assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(_assets)), name="assets")
+
+    @app.get("/")
+    def _spa_index() -> FileResponse:
+        return FileResponse(_FRONTEND_DIST / "index.html")
+
+    @app.get("/{full_path:path}")
+    def _spa_fallback(full_path: str) -> FileResponse:
+        """SPA deep-links (e.g. /map, /reports/123) and hashed static files."""
+        candidate = (_FRONTEND_DIST / full_path).resolve()
+        # Refuse path traversal outside dist.
+        if candidate.is_file() and str(candidate).startswith(str(_FRONTEND_DIST.resolve())):
+            return FileResponse(candidate)
+        return FileResponse(_FRONTEND_DIST / "index.html")

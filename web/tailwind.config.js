@@ -5,7 +5,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Surfaces — deep, low-chroma slate. Industrial control room, not consumer app.
         bg: "hsl(var(--bg))",
         surface: {
           DEFAULT: "hsl(var(--surface-1))",
@@ -18,36 +17,40 @@ export default {
           muted: "hsl(var(--text-2))",
           faint: "hsl(var(--text-3))",
         },
-        // Status — reserved. Never reused as a series colour.
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          hover: "hsl(var(--accent-hover))",
+        },
         status: {
           good: "#0ca30c",
           warning: "#fab219",
           serious: "#ec835a",
           critical: "#d03b3b",
         },
-        // Categorical series — validated against surface #131A22 (dark).
         series: {
-          1: "#3987e5", // blue
-          2: "#d95926", // orange
-          3: "#199e70", // aqua
-          4: "#c98500", // yellow
+          1: "#3987e5",
+          2: "#d95926",
+          3: "#199e70",
+          4: "#c98500",
         },
-        // Evidence-span highlight hues — validated all-pairs.
         cue: { energy: "#3987e5", control: "#d95926", context: "#199e70" },
       },
       fontFamily: {
         sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
-      // 11px -> 12px. The smallest type in the app carries badges, axis labels
-      // and provenance lines that a judge reads from several metres away.
-      fontSize: { "2xs": ["0.75rem", { lineHeight: "1.05rem" }] },
-      borderRadius: { lg: "0.5rem", md: "0.375rem", sm: "0.25rem" },
+      fontSize: { "2xs": ["0.75rem", { lineHeight: "1.05rem", letterSpacing: "0.02em" }] },
+      // Carbon: prefer 0–2px
+      borderRadius: { lg: "0px", md: "0px", sm: "2px", none: "0px" },
       keyframes: {
         "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
         "slide-up": {
           from: { opacity: "0", transform: "translateY(4px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in-right": {
+          from: { opacity: "0", transform: "translateX(16px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
         },
         "pulse-ring": {
           "0%,100%": { opacity: "0.35" },
@@ -57,6 +60,7 @@ export default {
       animation: {
         "fade-in": "fade-in 140ms ease-out",
         "slide-up": "slide-up 160ms ease-out",
+        "slide-in-right": "slide-in-right 180ms ease-out",
         "pulse-ring": "pulse-ring 2.2s ease-in-out infinite",
       },
     },

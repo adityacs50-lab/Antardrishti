@@ -124,7 +124,7 @@ export function PrecursorMapView() {
           Precursor Map
         </h1>
         <p className="text-xs text-ink-muted">
-          Where uncontrolled fatal potential concentrates, and where the same barrier keeps failing.
+          Where the same barrier keeps failing — one report is noise, a repeat is the pattern.
         </p>
       </header>
 
@@ -153,163 +153,164 @@ export function PrecursorMapView() {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Precursor density — site × activity</CardTitle>
-            <CardDescription>
-              Share of reports for that pair that came back as uncontrolled fatal potential. Click a
-              cell to filter the triage queue.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <QueryBoundary
-              loading={density.loading}
-              offline={density.offline}
-              error={density.error}
-              empty={!grid || grid.sites.length === 0}
-              onRetry={density.refetch}
-              emptyTitle="No reports to map yet"
-              emptyHint="Seed the database: python -m prahari.cli seed --limit 800"
-              skeleton={<Skeleton className="m-4 h-64" />}
-            >
-              {grid && (
-                <div className="overflow-x-auto p-4">
-                  <table className="w-full border-separate border-spacing-[2px] text-2xs">
-                    <thead>
-                      <tr>
-                        <th className="sticky left-0 z-10 bg-surface px-2 py-1 text-left font-medium text-ink-faint">
-                          Activity
-                        </th>
-                        {grid.sites.map((s) => (
-                          <th key={s} className="px-1 py-1 text-center font-medium text-ink-muted">
-                            <span className="inline-block max-w-[62px] truncate" title={s}>{s}</span>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {grid.activities.map((activity) => (
-                        <tr key={activity}>
-                          <td
-                            className="sticky left-0 z-10 max-w-[200px] truncate bg-surface px-2 py-1 text-ink-muted"
-                            title={activity}
-                          >
-                            {activity}
-                          </td>
-                          {grid.sites.map((site) => {
-                            const cell = grid.lookup.get(`${site}|${activity}`);
-                            const total = cell?.total_reports ?? 0;
-                            const rate = cell?.precursor_rate ?? 0;
-                            return (
-                              <td key={site} className="p-0">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      disabled={total === 0}
-                                      onClick={() => navigate(`/?site=${encodeURIComponent(site)}`)}
-                                      className={cn(
-                                        "tnum h-8 w-full rounded-[3px] text-center font-medium transition-transform",
-                                        total > 0 && "hover:scale-[1.12] hover:ring-2 hover:ring-ink/30",
-                                      )}
-                                      style={{
-                                        backgroundColor: densityFill(rate, total),
-                                        color: densityInk(rate, total),
-                                      }}
-                                    >
-                                      {total > 0 ? cell!.precursor_count : ""}
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <strong>{site}</strong> · {activity}
-                                    <br />
-                                    {total === 0 ? (
-                                      "No reports"
-                                    ) : (
-                                      <>
-                                        {cell!.precursor_count} of {total} reports were precursors (
-                                        {pct(rate)})
-                                      </>
-                                    )}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="text-2xs text-ink-faint">Precursor rate</span>
-                    <span className="flex gap-[2px]">
-                      {[0, 0.15, 0.35, 0.55, 0.75, 0.95].map((r) => (
-                        <span key={r} className="h-3 w-6 rounded-[2px]"
-                          style={{ backgroundColor: densityFill(r, 1) }} />
-                      ))}
-                    </span>
-                    <span className="text-2xs text-ink-faint">0% → 100%</span>
-                  </div>
-                </div>
-              )}
-            </QueryBoundary>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between gap-2">
-              <div className="space-y-1">
-                <CardTitle>Precursor Accumulation Index</CardTitle>
-                <CardDescription>
-                  Rises when the <em>same</em> barrier fails repeatedly at the <em>same</em> place.
-                </CardDescription>
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span><Info className="size-4 text-ink-faint" /></span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Only precursors and actual events contribute. Each is time-decayed (45-day half
-                  life) and grouped by barrier signature; a signature's count is raised to an
-                  exponent above 1, and the strongest signature dominates — so four failures of one
-                  barrier outscore four failures of four different barriers.
-                </TooltipContent>
-              </Tooltip>
+      {/* Lead with the pitch: the same barrier failing again is the thing
+          worth funding. The heatmap is corroborating detail, not the hook —
+          it runs full width below instead of competing for the fold. */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2">
+            <div className="space-y-1">
+              <CardTitle>Precursor Accumulation Index</CardTitle>
+              <CardDescription>
+                Rises when the <em>same</em> barrier fails repeatedly at the <em>same</em> place.
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <QueryBoundary
-              loading={accumulation.loading}
-              offline={accumulation.offline}
-              error={accumulation.error}
-              empty={(accumulation.data?.cells.length ?? 0) === 0}
-              onRetry={accumulation.refetch}
-              emptyTitle="No accumulating precursors"
-              emptyHint="Nothing is repeating at any site yet — which is good news."
-              skeleton={<Skeleton className="m-4 h-64" />}
-            >
-              {accumulation.data && (
-                <>
-                  <div className="border-b border-line p-4">
-                    <AccumulationTrend cells={accumulation.data.cells} />
-                  </div>
-                  <ul className="max-h-[420px] overflow-y-auto">
-                    {accumulation.data.cells.slice(0, 25).map((cell) => (
-                      <AccumulationRow
-                        key={`${cell.site}-${cell.energy_source}`}
-                        cell={cell}
-                        onOpen={(reportId) => navigate(`/reports/${reportId}`)}
-                      />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><Info className="size-4 text-ink-faint" /></span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Only precursors and actual events contribute. Each is time-decayed (45-day half
+                life) and grouped by barrier signature; a signature's count is raised to an
+                exponent above 1, and the strongest signature dominates — so four failures of one
+                barrier outscore four failures of four different barriers.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <QueryBoundary
+            loading={accumulation.loading}
+            offline={accumulation.offline}
+            error={accumulation.error}
+            empty={(accumulation.data?.cells.length ?? 0) === 0}
+            onRetry={accumulation.refetch}
+            emptyTitle="No accumulating precursors"
+            emptyHint="Nothing is repeating at any site yet — which is good news."
+            skeleton={<Skeleton className="m-4 h-64" />}
+          >
+            {accumulation.data && (
+              <>
+                <div className="border-b border-line p-4">
+                  <AccumulationTrend cells={accumulation.data.cells} />
+                </div>
+                <ul className="max-h-[420px] overflow-y-auto">
+                  {accumulation.data.cells.slice(0, 25).map((cell) => (
+                    <AccumulationRow
+                      key={`${cell.site}-${cell.energy_source}`}
+                      cell={cell}
+                      onOpen={(reportId) => navigate(`/reports/${reportId}`)}
+                    />
+                  ))}
+                </ul>
+              </>
+            )}
+          </QueryBoundary>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Precursor density — site × activity</CardTitle>
+          <CardDescription>
+            Share of reports that came back as uncontrolled fatal potential — click a cell to
+            filter the queue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <QueryBoundary
+            loading={density.loading}
+            offline={density.offline}
+            error={density.error}
+            empty={!grid || grid.sites.length === 0}
+            onRetry={density.refetch}
+            emptyTitle="No reports to map yet"
+            emptyHint="Seed the database: python -m prahari.cli seed --limit 800"
+            skeleton={<Skeleton className="m-4 h-64" />}
+          >
+            {grid && (
+              <div className="overflow-x-auto p-4">
+                <table className="w-full border-separate border-spacing-[2px] text-2xs">
+                  <thead>
+                    <tr>
+                      <th className="sticky left-0 z-10 bg-surface px-2 py-1 text-left font-medium text-ink-faint">
+                        Activity
+                      </th>
+                      {grid.sites.map((s) => (
+                        <th key={s} className="px-1 py-1 text-center font-medium text-ink-muted">
+                          <span className="inline-block max-w-[62px] truncate" title={s}>{s}</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grid.activities.map((activity) => (
+                      <tr key={activity}>
+                        <td
+                          className="sticky left-0 z-10 max-w-[200px] truncate bg-surface px-2 py-1 text-ink-muted"
+                          title={activity}
+                        >
+                          {activity}
+                        </td>
+                        {grid.sites.map((site) => {
+                          const cell = grid.lookup.get(`${site}|${activity}`);
+                          const total = cell?.total_reports ?? 0;
+                          const rate = cell?.precursor_rate ?? 0;
+                          return (
+                            <td key={site} className="p-0">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    disabled={total === 0}
+                                    onClick={() => navigate(`/?site=${encodeURIComponent(site)}`)}
+                                    className={cn(
+                                      "tnum h-8 w-full rounded-[3px] text-center font-medium transition-transform",
+                                      total > 0 && "hover:scale-[1.12] hover:ring-2 hover:ring-ink/30",
+                                    )}
+                                    style={{
+                                      backgroundColor: densityFill(rate, total),
+                                      color: densityInk(rate, total),
+                                    }}
+                                  >
+                                    {total > 0 ? cell!.precursor_count : ""}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <strong>{site}</strong> · {activity}
+                                  <br />
+                                  {total === 0 ? (
+                                    "No reports"
+                                  ) : (
+                                    <>
+                                      {cell!.precursor_count} of {total} reports were precursors (
+                                      {pct(rate)})
+                                    </>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            </td>
+                          );
+                        })}
+                      </tr>
                     ))}
-                  </ul>
-                </>
-              )}
-            </QueryBoundary>
-          </CardContent>
-        </Card>
-      </div>
+                  </tbody>
+                </table>
+
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-2xs text-ink-faint">Precursor rate</span>
+                  <span className="flex gap-[2px]">
+                    {[0, 0.15, 0.35, 0.55, 0.75, 0.95].map((r) => (
+                      <span key={r} className="h-3 w-6 rounded-[2px]"
+                        style={{ backgroundColor: densityFill(r, 1) }} />
+                    ))}
+                  </span>
+                  <span className="text-2xs text-ink-faint">0% → 100%</span>
+                </div>
+              </div>
+            )}
+          </QueryBoundary>
+        </CardContent>
+      </Card>
     </div>
   );
 }

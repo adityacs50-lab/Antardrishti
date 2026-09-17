@@ -132,7 +132,23 @@ is auditable.
 
 ## Quickstart
 
-**Prerequisites:** Python 3.11 and Node 18+. Docker optional.
+**Prerequisites:** Python 3.11+ (prefer 3.11) and Node 18+. Docker optional.
+
+### Windows (judges / SIH laptop)
+
+```powershell
+cd prahari
+powershell -ExecutionPolicy Bypass -File .\scripts\demo_windows.ps1
+```
+
+Uses `py -3.11` when available, seeds ~700 reports into `%LOCALAPPDATA%\prahari\`
+(avoids OneDrive Desktop SQLite issues), builds the UI, and opens the browser.
+
+Judge pack: [`JUDGES.md`](./JUDGES.md) · spoken script: [`DEMO_SCRIPT_90s.md`](./DEMO_SCRIPT_90s.md) ·
+screenshots: [`demo/screenshots/`](./demo/screenshots/) · design system: [`DESIGN.md`](./DESIGN.md)
+(adapted from [awesome-design-md](https://github.com/voltagent/awesome-design-md) IBM + PostHog).
+
+### Linux / macOS
 
 ```bash
 git clone https://github.com/adityacs50-lab/Antardrishti.git

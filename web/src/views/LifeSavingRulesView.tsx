@@ -83,8 +83,7 @@ export function LifeSavingRulesView() {
           Life-Saving Rules
         </h1>
         <p className="text-xs text-ink-muted">
-          IOGP Report 459. Which of the nine rules the reports engage, and which barrier fails most
-          often behind each.
+          IOGP Report 459 — which rules the reports engage, and which barrier fails behind each.
         </p>
       </header>
 

@@ -109,13 +109,13 @@ export function densityInk(rate: number, total: number) {
  * separately.
  */
 export const CHART_AXIS = {
-  stroke: "#9FB0C0",
+  stroke: "#c6c6c6",
   fontSize: 12,
   tickLine: false,
 } as const;
 
 /** The axis rule itself — quiet, but still visible. */
-export const CHART_AXIS_LINE = "#33425A";
+export const CHART_AXIS_LINE = "#6f6f6f";
 
 /** Gridlines. Present enough to read a value against, never loud. */
-export const CHART_GRID = "#243040";
+export const CHART_GRID = "#393939";

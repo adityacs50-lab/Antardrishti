@@ -3,7 +3,7 @@ name = "prahari"
 version = "0.1.0"
 description = "Offline SIF (Serious Injury & Fatality) precursor detection engine for oil & gas safety reports. Neuro-symbolic: ML extracts facts, a deterministic rule engine decides."
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.11,<3.14"
 license = { text = "Proprietary" }
 authors = [
     { name = "Team prahari" }

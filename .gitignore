@@ -58,3 +58,9 @@ Thumbs.db
 web/dist/
 web/.vite/
 screenshots/
+
+# Remotion render output (regenerate with: cd demo-video && npm run render)
+demo-video/out/
+
+# Scratch/export folder from a Claude session, not project source
+Claude outputs/

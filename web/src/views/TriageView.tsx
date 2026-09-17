@@ -1,68 +1,109 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ArrowRight, CheckCircle2, Filter, TriangleAlert } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { CheckCircle2, Filter, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
-import { ClassificationBadge, ConfidencePill, ControlBadge, LsrBadge } from "@/components/Chips";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { EnergyBarrierBadge, LsrBadge } from "@/components/Chips";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { NewReportDialog } from "@/components/NewReportDialog";
 import { QueryBoundary } from "@/components/StateViews";
-import { LiveAnalysisPanel } from "./LiveAnalysisPanel";
+import { KpiBar } from "@/components/KpiBar";
+import { AuditDrawer } from "@/components/AuditDrawer";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/useQuery";
-import { daysAgo, formatDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { CLASSIFICATION_LABEL, CLASSIFICATION_MEANING, formatDate } from "@/lib/format";
+import { CLASSIFICATION_TONE } from "@/lib/theme";
 import type { ReportSummary } from "@/types/api";
 
 const PAGE_SIZE = 25;
 
-function QueueRow({ report }: { report: ReportSummary }) {
+/**
+ * Column 1, "Priority & Site". The rank number carries classification as a
+ * colour, not as a fourth badge — the table brief asks for exactly five
+ * columns, so what used to be a standalone classification chip is folded
+ * into the one element that was always about priority anyway. Full wording
+ * is a hover away; nothing is lost, just deferred.
+ */
+function PriorityCell({ report }: { report: ReportSummary }) {
+  const tone = CLASSIFICATION_TONE[report.classification];
   return (
-    <Link
-      to={`/reports/${report.id}`}
-      className={cn(
-        "group grid grid-cols-[auto_1fr_auto] items-start gap-4 border-b border-line px-4 py-3.5 transition-colors last:border-b-0 hover:bg-surface-raised",
-      )}
-    >
-      <span
-        className="tnum mt-0.5 w-9 text-right text-sm font-semibold text-ink-faint"
-        title="Triage rank — a fixed table over the engine's own classes and control states, not a model score"
-      >
-        {report.triage_rank}
-      </span>
-
-      <div className="min-w-0 space-y-1.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <ClassificationBadge value={report.classification} />
-          <LsrBadge
-            value={report.primary_lsr}
-            energySource={report.energy_source}
-            classification={report.classification}
-          />
-          <ControlBadge value={report.control_status} />
+    <div className="flex items-start gap-3">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="tnum flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+            style={{ color: tone.fg, backgroundColor: tone.bg, boxShadow: `inset 0 0 0 1px ${tone.ring}` }}
+          >
+            {report.triage_rank}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <strong>{CLASSIFICATION_LABEL[report.classification]}.</strong>{" "}
+          {CLASSIFICATION_MEANING[report.classification]}
+        </TooltipContent>
+      </Tooltip>
+      <div className="min-w-0 space-y-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-xs font-medium text-ink">{report.site}</span>
           {report.reviewed && (
-            <span className="inline-flex items-center gap-1 text-2xs text-status-good">
-              <CheckCircle2 className="size-3" /> Reviewed
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span><CheckCircle2 className="size-3 shrink-0 text-status-good" /></span>
+              </TooltipTrigger>
+              <TooltipContent>Reviewed</TooltipContent>
+            </Tooltip>
           )}
         </div>
-        <p className="truncate text-xs text-ink-muted" title={report.reason}>
-          {report.reason}
-        </p>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-ink-faint">
-          <span className="font-medium text-ink-muted">{report.site}</span>
-          <span>{formatDate(report.date)}</span>
-          <span className="opacity-70">{daysAgo(report.date)}</span>
-          {report.activity && <span className="truncate">{report.activity}</span>}
-        </div>
+        <span className="block font-mono text-2xs text-ink-faint">{report.report_uid}</span>
+        <span className="block text-2xs text-ink-faint">{formatDate(report.date)}</span>
       </div>
+    </div>
+  );
+}
 
-      <div className="flex items-center gap-3 pt-0.5">
-        <ConfidencePill value={report.evidence_completeness} />
-        <ArrowRight className="size-4 text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-ink" />
-      </div>
-    </Link>
+/** Column 2, "Activity & Excerpt". */
+function ActivityExcerptCell({ report }: { report: ReportSummary }) {
+  return (
+    <div className="max-w-sm space-y-1">
+      {report.activity && (
+        <span className="inline-block rounded border border-line bg-surface-sunken px-1.5 py-0.5 text-2xs text-ink-muted">
+          {report.activity}
+        </span>
+      )}
+      <p className="line-clamp-2 text-xs leading-relaxed text-ink-muted" title={report.excerpt}>
+        {report.excerpt}
+      </p>
+    </div>
+  );
+}
+
+function QueueRow({ report, onAudit }: { report: ReportSummary; onAudit: (id: number) => void }) {
+  return (
+    <tr className="border-b border-line transition-colors last:border-b-0 hover:bg-surface-raised">
+      <td className="px-4 py-3 align-top">
+        <PriorityCell report={report} />
+      </td>
+      <td className="px-4 py-3 align-top">
+        <ActivityExcerptCell report={report} />
+      </td>
+      <td className="px-4 py-3 align-top">
+        <LsrBadge
+          value={report.primary_lsr}
+          energySource={report.energy_source}
+          classification={report.classification}
+        />
+      </td>
+      <td className="px-4 py-3 align-top">
+        <EnergyBarrierBadge energySource={report.energy_source} controlStatus={report.control_status} />
+      </td>
+      <td className="px-4 py-3 align-top text-right">
+        <Button variant="outline" size="sm" onClick={() => onAudit(report.id)}>
+          Audit
+        </Button>
+      </td>
+    </tr>
   );
 }
 
@@ -71,6 +112,7 @@ export function TriageView() {
   const site = params.get("site") ?? "";
   const [includeEvents, setIncludeEvents] = useState(false);
   const [page, setPage] = useState(0);
+  const [auditId, setAuditId] = useState<number | null>(null);
 
   const meta = useQuery(() => api.meta(), []);
   const query = useMemo(
@@ -87,34 +129,40 @@ export function TriageView() {
   const total = triage.data?.total ?? 0;
   const shown = triage.data?.items.length ?? 0;
 
+  const refreshAll = () => {
+    triage.refetch();
+    meta.refetch();
+    window.dispatchEvent(new Event("prahari:data-changed"));
+  };
+
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+    <div className="space-y-6">
+      <div className="hero-strip animate-fade-in">
+        <span className="border border-accent/40 bg-accent/15 px-2 py-0.5 text-2xs font-normal uppercase tracking-wide text-accent">
+          Thesis
+        </span>
+        <p className="text-sm text-ink">
+          <span className="font-semibold">Potential ≠ severity</span>
+          <span className="text-ink-muted"> — we rank fatal energy with a missing barrier.</span>
+        </p>
+      </div>
+
+      {/* KPI bar: the four numbers a reviewer checks before opening a
+          single row. */}
+      <KpiBar />
+
       <section className="space-y-3">
-        <header className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-ink">
-              <TriangleAlert className="size-5 text-status-serious" />
-              Triage Queue
-            </h1>
-            <p className="text-xs text-ink-muted">
-              Uncontrolled fatal potential, ranked highest first. Nobody was necessarily hurt in any
-              of these — that is the point.
-            </p>
-          </div>
+        <header className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight text-ink">
+            <TriangleAlert className="size-4 text-status-serious" />
+            Triage Queue
+          </h2>
           <div className="flex shrink-0 items-center gap-2">
-            <BulkImportDialog onImported={() => {
-                triage.refetch();
-                meta.refetch();
-                window.dispatchEvent(new Event("prahari:data-changed"));
-              }} />
+            <BulkImportDialog onImported={refreshAll} />
             <NewReportDialog
               sites={meta.data?.sites ?? []}
               activities={meta.data?.activities ?? []}
-              onSubmitted={() => {
-                triage.refetch();
-                meta.refetch();
-                window.dispatchEvent(new Event("prahari:data-changed"));
-              }}
+              onSubmitted={refreshAll}
             />
           </div>
         </header>
@@ -122,7 +170,7 @@ export function TriageView() {
         <Card>
           <CardHeader className="flex-row flex-wrap items-center gap-3 space-y-0 py-2.5">
             <span className="inline-flex items-center gap-1.5 text-2xs text-ink-faint">
-              <Filter className="size-3.5" /> Filter
+              <Filter className="size-3.5" /> Site
             </span>
             <Select
               aria-label="Site"
@@ -138,16 +186,16 @@ export function TriageView() {
               <option value="">All sites</option>
               {meta.data?.sites.map((s) => <option key={s} value={s}>{s}</option>)}
             </Select>
-            <label className="inline-flex cursor-pointer items-center gap-2 text-2xs text-ink-muted">
+            <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-2xs text-ink-faint">
               <input
                 type="checkbox"
                 checked={includeEvents}
                 onChange={(e) => { setIncludeEvents(e.target.checked); setPage(0); }}
                 className="size-3.5 accent-[#3987e5]"
               />
-              Include actual events (HSIF / LSIF)
+              Include actual events
             </label>
-            <span className="tnum ml-auto text-2xs text-ink-faint">
+            <span className="tnum text-2xs text-ink-faint">
               {total} report{total === 1 ? "" : "s"}
             </span>
           </CardHeader>
@@ -161,8 +209,23 @@ export function TriageView() {
             emptyTitle="No SIF potential in the queue"
             emptyHint="Either nothing qualifies, or the database is empty. Seed it with: python -m prahari.cli seed --limit 800"
           >
-            <div>
-              {triage.data?.items.map((r) => <QueueRow key={r.id} report={r} />)}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-line-strong text-2xs uppercase tracking-wide text-ink-faint">
+                    <th className="px-4 py-2 font-medium">Priority &amp; Site</th>
+                    <th className="px-4 py-2 font-medium">Activity &amp; Excerpt</th>
+                    <th className="px-4 py-2 font-medium">Primary LSR Tag</th>
+                    <th className="px-4 py-2 font-medium">Energy &amp; Barrier Status</th>
+                    <th className="px-4 py-2 text-right font-medium">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {triage.data?.items.map((r) => (
+                    <QueueRow key={r.id} report={r} onAudit={setAuditId} />
+                  ))}
+                </tbody>
+              </table>
             </div>
             {total > PAGE_SIZE && (
               <div className="flex items-center justify-between border-t border-line px-4 py-2.5">
@@ -188,9 +251,15 @@ export function TriageView() {
         </Card>
       </section>
 
-      <section className="xl:sticky xl:top-[76px] xl:self-start">
-        <LiveAnalysisPanel />
-      </section>
+      {/* Slide-over Audit drawer — everything the row used to show inline
+          (confidence, fired rules, governing rule detail) plus the audit
+          controls, without leaving the queue. */}
+      <AuditDrawer
+        reportId={auditId}
+        open={auditId !== null}
+        onOpenChange={(v) => { if (!v) setAuditId(null); }}
+        onReviewed={refreshAll}
+      />
     </div>
   );
 }
