@@ -58,6 +58,8 @@ Thumbs.db
 web/dist/
 web/.vite/
 screenshots/
+# README images are committed on purpose.
+!docs/screenshots/
 
 # Remotion render output (regenerate with: cd demo-video && npm run render)
 demo-video/out/

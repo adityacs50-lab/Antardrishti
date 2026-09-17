@@ -2,151 +2,248 @@
 
 # प्रहरी · prahari
 
-### Most safety systems rank what happened. This one ranks what almost did.
+### Most safety systems rank what happened. prahari ranks what almost did.
 
-An **offline, neuro-symbolic SIF precursor detection engine** for oil &amp; gas
-safety reports — built for Smart India Hackathon 2026, problem statement
-**PS 26165 (Oil India Limited)**.
+**prahari** (Hindi for *sentinel*) reads oil & gas safety reports and flags the ones that could have killed someone, even when nobody was hurt.
 
-[![Offline](https://img.shields.io/badge/network-100%25%20offline-0ca30c?style=flat-square)](#the-offline-guarantee)
-[![Tests](https://img.shields.io/badge/tests-344%20passing-0ca30c?style=flat-square)](#evaluation)
-[![Accuracy](https://img.shields.io/badge/held--out%20accuracy-83.3%25-3987e5?style=flat-square)](#evaluation)
-[![Python](https://img.shields.io/badge/python-3.11-3987e5?style=flat-square)](#quickstart)
-[![Frontend](https://img.shields.io/badge/React%20%2B%20Vite%20%2B%20TS-3987e5?style=flat-square)](#the-control-room-ui)
-[![Explainable](https://img.shields.io/badge/verdicts-100%25%20rule--traced-d95926?style=flat-square)](#every-verdict-is-a-receipt)
+It runs **100% offline**, and every verdict comes with the exact rules and words that produced it.
 
-[Why it exists](#the-problem-severity--potential) ·
-[How it works](#how-it-works) ·
-[Quickstart](#quickstart) ·
-[Evaluation](#evaluation) ·
-[Honest status](#honest-status)
+Built by **Team Antardrishti** for **Smart India Hackathon 2026**, problem statement **SIH26165**: *AI/NLP engine to detect SIF precursors*, set by **Oil India Limited**.
+
+[![Offline](https://img.shields.io/badge/network-100%25%20offline-0ca30c?style=flat-square)](#-the-offline-guarantee)
+[![Tests](https://img.shields.io/badge/backend%20tests-361%20passing-0ca30c?style=flat-square)](#-results)
+[![Recall](https://img.shields.io/badge/precursor%20recall-97.6%25-d95926?style=flat-square)](#-results)
+[![F1](https://img.shields.io/badge/precursor%20F1-90.9%25-3987e5?style=flat-square)](#-results)
+[![Explainable](https://img.shields.io/badge/verdicts-100%25%20rule--traced-d95926?style=flat-square)](#-how-it-works)
+[![Stack](https://img.shields.io/badge/FastAPI%20%C2%B7%20React%20%C2%B7%20TypeScript-3987e5?style=flat-square)](#-quickstart)
+
+[What it is](#-what-prahari-is-in-60-seconds) ·
+[The problem](#-the-problem-severity--potential) ·
+[Features](#-what-you-can-do-with-it) ·
+[How it works](#-how-it-works) ·
+[Results](#-results) ·
+[Quickstart](#-quickstart) ·
+[Limitations](#-honest-status--limitations)
+
+<img src="docs/screenshots/01-triage-queue.png" alt="prahari Triage Queue" width="900" />
 
 </div>
 
 ---
 
-## The problem: severity ≠ potential
+## 🧭 What prahari is, in 60 seconds
 
-A **SIF** is a Serious Injury or Fatality. The safety literature's central,
-uncomfortable finding is that fatalities do **not** grow out of the pile of
-minor injuries beneath them. They come from a different population entirely —
-**high-energy work where a barrier was missing** — and most of the time that
-population produces *no injury at all*, so it never reaches the top of anyone's
-dashboard.
+| | |
+|---|---|
+| **What it does** | Takes free-text safety reports (unsafe acts, unsafe conditions, near misses, incidents) and decides which ones are **SIF precursors**: situations with enough energy to cause a **S**erious **I**njury or **F**atality, where the barrier that should stop it was missing, failed or bypassed. |
+| **Who it's for** | HSE (Health, Safety & Environment) officers and safety managers at oil & gas operators who receive hundreds of reports and must decide which few need action today. |
+| **What makes it different** | It ranks by **potential**, not by what happened. A cut finger ranks low. A missing machine guard on a running pump ranks high, even if nobody was hurt. |
+| **Why you can trust it** | An NLP layer only **finds facts** in the text. A **deterministic rule engine** makes every decision. Each verdict lists the named rules that fired and highlights the exact words they used. There is no black-box score. |
+| **Where it runs** | Entirely on a laptop or a site server with **no internet**: no cloud APIs, no LLM calls, no CDN. It works in field conditions and air-gapped control rooms. |
+| **Languages** | English, romanised Hindi, Devanagari, romanised Assamese and Assamese script, including code-mixed field writing such as *"Hot work permit nahi liya gaya tha"*. |
 
-Every incident system in the industry ranks reports by **what happened**.
-prahari ranks them by **what could have happened**.
+---
+
+## 🎯 The problem: severity ≠ potential
+
+The central, uncomfortable finding of modern safety science is that **fatalities do not grow out of the pile of minor injuries**.
+- They come from a different population: **high-energy work where a barrier was missing**.
+- Most of the time, that population produces **no injury at all**, so it never reaches the top of anyone's dashboard.
+
+Almost every incident system ranks reports by **what happened**. prahari ranks them by **what could have happened**.
 
 <table>
 <tr>
-<th width="50%">Report A — the one everyone tracks</th>
-<th width="50%">Report B — the one that matters</th>
+<th width="50%">Report A: the one everyone tracks</th>
+<th width="50%">Report B: the one that matters</th>
 </tr>
 <tr>
 <td>
 
-> *"Sri R. Das (fitter) was cutting GI sheet at the workshop, Duliajan. Hand
-> gloves were not worn. The blade slipped and he sustained a cut on the left
-> index finger. First aid was given and he resumed duty."*
+> *"Sri R. Das (fitter) was cutting GI sheet at the workshop, Duliajan. Hand gloves were not worn. The blade slipped and he sustained a cut on the left index finger. First aid was given and he resumed duty."*
 
-**A real injury.** Blood, a first-aid entry, a line in the monthly report.
+**A real injury:** blood, a first-aid entry, a line in the monthly report.
 
-`Low severity` — the energy involved could never have killed him.
+prahari says **`Low severity`**. The energy involved could never have killed him.
 
 </td>
 <td>
 
-> *"Sri B. Gogoi (fitter) was attending the belt of the pumping unit at Well
-> No. 214, Moran. The machine guard was missing from the drive and the unit was
-> not isolated at the panel. The belt started on auto while he was still inside
-> the guard area. **There was no injury to any personnel.**"*
+> *"Sri B. Gogoi (fitter) was attending the belt of the pumping unit at Well No. 214, Moran. The machine guard was missing from the drive and the unit was not isolated at the panel. The belt started on auto while he was still inside the guard area. **There was no injury to any personnel.**"*
 
-**Nothing happened.** No injury, no lost time, closed the same day almost
-anywhere in the world.
+**Nothing happened.** Almost anywhere, this report would be closed the same day.
 
-`Potential SIF` — mechanical energy far past the high-energy threshold, the
-one direct control absent, IOGP **Energy Isolation** breached.
+prahari says **`Potential SIF`**. High mechanical energy was released, the direct control (machine guarding) was **absent**, and the IOGP Life-Saving Rule **Energy Isolation** was breached.
 
 </td>
 </tr>
 </table>
 
-A severity model scores Report B at zero. That is not a tuning problem — it is
-the model answering a different question. prahari asks: *was there enough
-energy to kill someone, and was the barrier that stops it actually there?*
+A severity-based model scores Report B near zero. That isn't a tuning problem; it is answering a different question.
+
+prahari asks: ***was there enough energy to kill someone, and was the barrier that stops it actually there?***
 
 ---
 
-## Every verdict is a receipt
+## ✨ What you can do with it
 
-The hard part of safety AI is not accuracy. It is that an HSE manager has to
-**defend the call to a union rep, a regulator, and the man it concerns** — and
-"the model gave it 0.87" is not a defence.
+| Screen | What it's for |
+|---|---|
+| **Triage Queue** | Every SIF precursor, ranked by fatal potential. Filter by site or Life-Saving Rule, open any report in an **Audit** drawer, and **Confirm** or **Override** the verdict. A slim insights bar shows the engine's measured accuracy and the single most urgent action. |
+| **Live Incident Sandbox** | Paste or type any report and get a verdict as you type, with nothing saved. It has four one-click demo scenarios: a clear Potential SIF, a borderline case, a low-severity case and a multi-rule Hinglish report. |
+| **Report detail / Audit** | The report with every piece of evidence highlighted, the ordered list of named rules that fired, the verdict, and a **Hybrid engine signal** panel showing what the NLP layer extracted and what the rules decided. |
+| **Precursor Map** | A site × activity heatmap plus the **Precursor Accumulation Index**, which rises when *the same barrier fails repeatedly at the same place*. It also lists **Recommended Immediate Actions**, the top 3 barriers to reinforce. |
+| **Life-Saving Rules** | How reports spread across the nine IOGP Life-Saving Rules, with a per-rule drill-down into which barrier states show up and a link to those reports. |
+| **Ontology** | A searchable view of everything the engine reasons with: the 10 energy sources, 7 barrier states, 43 barriers, the 9 Life-Saving Rules, how they connect, and all 17 named rules. It is served from the engine itself, not a copy. |
+| **New Report / Bulk Import** | Add one report (text, PDF or .txt) or import a whole CSV/JSONL export. Every row runs through the same engine and is saved. |
+| **Export for HSE** | Download the currently filtered queue as a CSV (opens in Excel, Indian scripts intact) or as a print-ready PDF summary. |
 
-So prahari is **neuro-symbolic**, and the split is absolute:
+<details open>
+<summary><b>Screenshots</b></summary>
 
-> **The model never decides.** It extracts spans of text — an energy source, a
-> magnitude cue, a control mention, a negation. A **deterministic rule engine**
-> reads those facts and makes the call. Every verdict names the rules that
-> fired and the exact character ranges that triggered them.
+| | |
+|---|---|
+| **Live Incident Sandbox**, one-click scenario, hybrid signal, highlighted evidence<br><img src="docs/screenshots/04-live-sandbox.png" width="440" /> | **Audit drawer**, verdict + hybrid signal + Confirm / Override<br><img src="docs/screenshots/03-audit-drawer.png" width="440" /> |
+| **Report detail**, every highlight is a span a rule actually used<br><img src="docs/screenshots/05-report-detail.png" width="440" /> | **Engine performance & recommended actions**<br><img src="docs/screenshots/02-engine-performance.png" width="440" /> |
+| **Precursor Map**, escalation alert + actions + accumulation index<br><img src="docs/screenshots/06-precursor-map.png" width="440" /> | **Life-Saving Rules** distribution and barrier drill-down<br><img src="docs/screenshots/07-life-saving-rules.png" width="440" /> |
+| **Ontology explorer**<br><img src="docs/screenshots/08-ontology.png" width="440" /> | **Works on a phone**<br><img src="docs/screenshots/09-mobile.png" width="200" /> |
 
-```
-Verdict:  POTENTIAL_SIF                          confidence 0.91
-Rules:    R-ENERGY-01  mechanical energy identified      → "belt of the pumping unit"
-          R-HE-02      high-energy cue, CATEGORICAL      → "pumping unit"
-          R-CTRL-01    direct control ABSENT             → "machine guard was missing"
-          R-CTRL-03    isolation NOT_FOLLOWED            → "not isolated at the panel"
-          R-CLASS-01   EEI SCL decision table (T,T,F,F)  → PSIF
-          R-LSR-01     primary rule: Energy Isolation
-```
-
-Swap the extractor — keyword matcher, MuRIL, anything — and the *justification
-does not change shape*. A test enforces that the engine cannot tell which
-extractor produced its facts.
+</details>
 
 ---
 
-## How it works
+## ⚙️ How it works
+
+prahari is **neuro-symbolic**, and the split between the two halves is absolute:
+
+> **The model never decides.** The NLP layer only extracts facts: an energy source, a magnitude, a barrier mention, a negation, each with exact character positions.
+> A **deterministic rule engine** reads those facts and makes the call. Same text in, same verdict out, every time.
 
 ```mermaid
 flowchart LR
     A["Free-text report<br/><sub>English · Hindi · Assamese<br/>code-mixed, abbreviated</sub>"]
-    B["<b>Extraction</b><br/><sub>MuRIL + LoRA → ONNX INT8<br/>keyword matcher as fallback</sub>"]
-    C["<b>ExtractedFacts</b><br/><sub>6 span types<br/>+ character offsets</sub>"]
-    D["<b>Rule engine</b><br/><sub>17 named rules<br/>deterministic</sub>"]
-    E["<b>Verdict</b><br/><sub>SCL class · LSR · barrier<br/>+ full rule trace</sub>"]
-    F["<b>Accumulation Index</b><br/><sub>site × energy<br/>repeat-weighted</sub>"]
+    B["<b>1 · Fact extraction</b><br/><sub>keyword lexicon (default)<br/>MuRIL + LoRA → ONNX (optional)</sub>"]
+    C["<b>Facts + spans</b><br/><sub>energy · magnitude · barrier<br/>negation · injury · activity</sub>"]
+    D["<b>2 · Rule engine</b><br/><sub>17 named rules<br/>deterministic</sub>"]
+    E["<b>Verdict</b><br/><sub>SCL class · Life-Saving Rule<br/>barrier state · rule trace</sub>"]
+    F["<b>3 · Patterns</b><br/><sub>Accumulation Index<br/>site × energy</sub>"]
+    G["<b>HSE officer</b><br/><sub>confirm / override<br/>append-only</sub>"]
 
     A --> B --> C --> D --> E --> F
+    E --> G
 
-    style B fill:#3987e5,stroke:none,color:#fff
-    style D fill:#d95926,stroke:none,color:#fff
-    style E fill:#199e70,stroke:none,color:#fff
+    style B fill:#199e70,stroke:none,color:#fff
+    style D fill:#3987e5,stroke:none,color:#fff
+    style E fill:#d95926,stroke:none,color:#fff
 ```
 
-The boundary between **C** and **D** is the design principle. Facts cross it;
-opinions do not. Everything left of it is replaceable; everything right of it
-is auditable.
+The boundary between **facts** and the **rule engine** is the design principle: facts cross it, opinions do not. Everything to its left can be replaced (keyword matcher, MuRIL, anything else). Everything to its right is auditable, and a test enforces that the engine cannot tell which extractor produced its facts.
+
+### Every verdict is a receipt
+
+This is the real rule trace for Report B above, as the app shows it:
+
+```text
+Verdict: POTENTIAL SIF    Life-Saving Rule: Energy Isolation    Evidence: 4/4 fact slots
+
+R-ENERGY-01  energy_source = mechanical              ← "pumping unit", "machine guard"
+R-HE-01      high_energy = true                      ← "pumping unit"
+R-CTRL-01    control_status = ABSENT (machine guard) ← "machine guard" … "was missing", "not isolated"
+R-EFFECT-01  direct_control_effective = false        ← only a VERIFIED direct control protects
+R-INJ-01     injury_outcome = none                   ← "no injury to any personnel"
+R-EVENT-01   high_energy_incident = true             ← "started on auto"
+R-CLASS-01   classification = PSIF                   ← EEI SCL decision table
+R-LSR-01     primary Life-Saving Rule = Energy Isolation ← "not isolated"
+```
+
+An HSE manager has to defend a call to a regulator, a union representative and the worker it concerns, and *"the model gave it 0.87"* is not a defence. This trace is.
+
+> **Note:** prahari deliberately has **no ML confidence score**. What the UI shows is *evidence completeness*: how many of the four required facts (energy, magnitude, barrier state, outcome) were found in the text.
+
+### The decision, in one table
+
+prahari implements the Edison Electric Institute **Safety Classification & Learning (SCL)** model:
+
+| Class | High energy? | Energy released? | Direct control worked? | Serious injury? | Meaning |
+|---|:-:|:-:|:-:|:-:|---|
+| **HSIF** | ✔ | ✔ | ✘ | ✔ | Serious injury/fatality from high energy |
+| **LSIF** | ✘ | – | – | ✔ | Serious outcome, not from high energy |
+| **PSIF** ⚠ | ✔ | ✔ | ✘ | ✘ | **Potential SIF**: energy got loose, nothing stopped it, nobody hurt *this time* |
+| **Exposure** ⚠ | ✔ | ✘ | ✘ | ✘ | A high-energy hazard sat there uncontrolled |
+| **Capacity** | ✔ | ✔ | ✔ | ✘ | Energy released and the barrier held |
+| **Success** | ✔ | ✘ | ✔ | ✘ | Hazard present, verified barrier in place |
+| **Low severity** | ✘ | – | – | ✘ | No fatal potential, whatever the injury |
+| **Insufficient info** | | | | | *prahari extension*: too vague to judge honestly |
+
+⚠ = **SIF precursor**. These are what the Triage Queue surfaces.
 
 ---
 
-## Quickstart
+## 📊 Results
 
-**Prerequisites:** Python 3.11+ (prefer 3.11) and Node 18+. Docker optional.
+Measured by a script, not typed in. Anyone can reproduce these numbers with:
 
-### Windows (judges / SIH laptop)
-
-```powershell
-cd prahari
-powershell -ExecutionPolicy Bypass -File .\scripts\demo_windows.ps1
+```bash
+PYTHONPATH=backend python -m prahari.evaluation.metrics
 ```
 
-Uses `py -3.11` when available, seeds ~700 reports into `%LOCALAPPDATA%\prahari\`
-(avoids OneDrive Desktop SQLite issues), builds the UI, and opens the browser.
+The Engine Performance panel in the app reads the same output file.
 
-Judge pack: [`JUDGES.md`](./JUDGES.md) · spoken script: [`DEMO_SCRIPT_90s.md`](./DEMO_SCRIPT_90s.md) ·
-screenshots: [`demo/screenshots/`](./demo/screenshots/) · design system: [`DESIGN.md`](./DESIGN.md)
-(adapted from [awesome-design-md](https://github.com/voltagent/awesome-design-md) IBM + PostHog).
+**SIF precursor detection** (is this report a PSIF or an Exposure?), on **450 held-out reports**:
+
+| Metric | Value | What it means |
+|---|---:|---|
+| **Recall** | **97.6%** | Of real precursors, 160 of 164 were flagged. The engine is tuned for this number, because a miss can cost a life. |
+| **Precision** | **85.1%** | Of flagged reports, 160 of 188 were real precursors. A false alarm costs a reviewer a few minutes. |
+| **F1-score** | **90.9%** | Balance of the two |
+| **8-class SCL accuracy** | **83.3%** | Exact class out of all eight (macro-F1 84.7%) |
+| **Processing time** | **~1.9 ms** / report | Plain CPU, no GPU |
+| Full 3,000-report corpus | P 87.2% · R 96.5% · F1 91.6% | Same pipeline |
+
+<details>
+<summary><b>Per-class recall (held-out test set)</b></summary>
+
+| SCL class | Recall | Reports | |
+|---|---:|---:|---|
+| HSIF | 100.0% | 32 | `██████████` |
+| Insufficient information | 96.4% | 56 | `█████████▋` |
+| Exposure | 95.6% | 68 | `█████████▌` |
+| LSIF | 92.0% | 25 | `█████████▏` |
+| Success | 85.1% | 47 | `████████▌` |
+| Low severity | 79.0% | 81 | `███████▉` |
+| PSIF | 75.0% | 96 | `███████▌` |
+| Capacity | 55.6% | 45 | `█████▌` |
+
+**Why is PSIF only 75% when precursor recall is 97.6%?** Most PSIF misses are classified as *Exposure*, the other precursor class. They still land in the Triage Queue; the engine just wasn't sure energy was *released*.
+
+**Capacity** is the honest weak spot. It requires recognising that a barrier *held under load*, the subtlest distinction in the taxonomy.
+
+</details>
+
+**HSE reviewer agreement** is shown live in the app: the share of reviewed reports where an officer confirmed the engine's verdict rather than overriding it. It is computed from real confirm/override decisions, never pre-set.
+
+> **Important:** these numbers come from a **synthetic corpus** written in Oil India field style, with gold labels. No real OIL report has been scored yet, so expect lower numbers on real field text. See [Limitations](#-honest-status--limitations).
+
+---
+
+## 🚀 Quickstart
+
+**You need:** Python **3.11+** and Node **18+**. Internet is needed **only to install** dependencies; after that, disconnect.
+
+### Windows (one click)
+
+```powershell
+git clone https://github.com/adityacs50-lab/Antardrishti.git
+cd Antardrishti
+.\run_prahari_demo.bat
+```
+
+The script:
+- installs the backend and seeds ~700 demo reports (into `%LOCALAPPDATA%\prahari\`, which avoids OneDrive SQLite issues)
+- builds the UI
+- opens **http://localhost:8000**
+
+Re-running it keeps your data and your reviews. Close the window to stop.
 
 ### Linux / macOS
 
@@ -154,339 +251,305 @@ screenshots: [`demo/screenshots/`](./demo/screenshots/) · design system: [`DESI
 git clone https://github.com/adityacs50-lab/Antardrishti.git
 cd Antardrishti
 
-make setup     # the ONLY step that needs a network — installs deps, fetches models
-make verify    # proves the offline claim end to end. Must print PASSED.
-make demo      # build + migrate + seed 700 reports + launch + open browser
+make setup     # the ONLY step that needs a network: installs Python + npm deps
+make verify    # proves the offline claim end to end; must print PASSED
+make demo      # build, seed 700 reports, launch, open http://localhost:5173
 ```
 
-Then **turn the network off** and everything still works. That is the point.
+Then **turn the network off**. Everything still works; that is the point.
 
 | Command | What it does |
 |---|---|
-| `make demo` | One command: build, seed, launch, open `localhost:5173` |
-| `make verify` | Static ban-list scan → model checksums → boot with egress black-holed → assert a real verdict |
-| `make reset` | Clean, seeded, known-good state in under 10 seconds |
-| `make test` | 344 backend tests |
-| `make doctor` | Preflight: interpreter, deps, ports, DB writability |
+| `make demo` | Build, seed, launch API (`:8000`) and UI (`:5173`) |
+| `make verify` | Offline proof: no network imports, no external URLs, model checksums, full boot with outbound traffic black-holed |
+| `make reset` | Back to a clean, seeded, known-good state in seconds |
+| `make test` | Backend test suite |
+| `make lint` | TypeScript type-check of the UI |
+| `make doctor` | Preflight: Python, dependencies, ports, database writability |
 
 <details>
 <summary><b>Running the pieces by hand</b></summary>
 
 ```bash
-# Backend
-cd backend
+# Backend (from the repo root)
 pip install -e ".[dev]"
-python -m alembic upgrade head
-python -m prahari.cli seed --limit 700
-uvicorn prahari.main:app --reload        # http://localhost:8000/docs
+PYTHONPATH=backend python -m prahari.cli seed --limit 700
+PYTHONPATH=backend uvicorn prahari.main:app --reload     # API docs: http://localhost:8000/docs
 
 # Frontend
 cd web
 npm install
-npm run dev                              # http://localhost:5173
+npm run dev                                               # http://localhost:5173 (proxies /api to :8000)
+
+# Or build the UI once and let the API serve it on :8000
+npm run build
+
+# Tests
+PYTHONPATH=backend python -m pytest backend/tests -q
 
 # Regenerate the labelled corpus (deterministic)
-python -m prahari.data.generator --n 3000 --seed 42
+PYTHONPATH=backend python -m prahari.data.generator --n 3000 --seed 42
 ```
 
 </details>
 
 <details>
-<summary><b>If SQLite refuses to open the database</b></summary>
+<summary><b>Docker</b></summary>
 
-Network-synced folders (OneDrive-backed Desktop, network shares, some VM
-mounts) cannot host a SQLite file — you will see `disk I/O error` regardless of
-journal mode. prahari probes writability at startup with a real
-create/insert/commit and relocates the database to the system temp directory,
-logging a warning. Nothing to configure; just know why the path in the banner
-may not be the one in the repo.
+```bash
+docker compose up --build     # API on :8000, UI on :5173
+```
 
+The compose file and Dockerfiles are wired for fully offline runtime, but **they have not been run end to end yet**. Prefer the Windows script or `make demo` for a demo.
+
+</details>
+
+<details>
+<summary><b>"disk I/O error" from SQLite?</b></summary>
+
+Network-synced folders (OneDrive-backed Desktop, network shares, some VM mounts) cannot host a SQLite file. prahari tests writability at startup and moves the database to the system temp directory, logging a warning. On Windows the launcher avoids this by using `%LOCALAPPDATA%`.
+
+</details>
+
+### A 90-second tour
+
+1. **Triage Queue:** the thesis strip, the insights bar and the ranked queue. Click **Audit** on the top row.
+2. **Live Incident Sandbox:**
+   - Click **Low severity**: a real injury, low potential.
+   - Click **Clear Potential SIF**: nobody hurt, fatal potential. Point at the *Hybrid engine signal* and the highlights.
+   - Click **Multi-rule · Hinglish**: code-mixed text, three Life-Saving Rules.
+3. **Triage Queue → insights bar → All actions:** click the top recommendation. The queue filters to that site. Then **Export for HSE → PDF summary**.
+4. **Ontology:** everything the engine reasons with, searchable.
+
+The full spoken script is [`DEMO_SCRIPT_90s.md`](./DEMO_SCRIPT_90s.md), and the judge one-pager is [`JUDGES.md`](./JUDGES.md).
+
+---
+
+## 🔬 The safety science, cited
+
+`backend/prahari/domain/` is **pure data. It decides nothing.** Every definition carries a citation, and anything prahari invented is tagged `PRAHARI_MODELLING` so nobody credits it to IOGP or EEI.
+
+| Concept | Source |
+|---|---|
+| **Energy Wheel**: 10 hazardous-energy categories (gravity, motion, mechanical, electrical, pressure, temperature, chemical, biological, radiation, sound) | EEI *Safety Classification & Learning* model |
+| **1,500 J high-energy threshold** + 18 observable high-energy cues | EEI *High-Energy Control Assessment* |
+| **Direct control**: the three-part test (targets the energy · works when used properly · survives human error) | EEI HECA; Hallowell et al., *Professional Safety Journal*, 2023 |
+| **SCL taxonomy** (7 classes) | EEI SCL |
+| **Nine Life-Saving Rules**, with their official "I" statements | IOGP Report 459 |
+| Indian upstream & pipeline vocabulary | OISD standards STD-174, STD-190, STD-216, STD-231, GDN-182, GDN-226, RP-238 |
+
+Two choices worth defending out loud:
+
+- **An unverified barrier is not a barrier.** EEI requires a control to be *"installed, **verified**, and used properly."* A harness someone *says* was worn is recorded as `PRESENT_UNVERIFIED` and counts as **unprotected**. This costs accuracy and is correct.
+- **Absence of evidence is not a control.** If a high-energy hazard is described and no barrier is mentioned, prahari records `ABSENT`, never "probably fine". It produces false alarms, never false all-clears.
+
+[`docs/DOMAIN.md`](./docs/DOMAIN.md) explains every definition in plain English.
+
+---
+
+## 🧪 The labelled corpus
+
+There is no public, labelled dataset of Indian oilfield safety reports, so prahari ships one: **3,000 reports** written the way crews actually write them.
+- **Style:** terse and abbreviation-heavy (`PTW`, `LOTO`, `WAH`, `H2S`, `BOP`, `GGS`), with realistic typos.
+- **Languages:** code-mixed across five scripts and registers.
+- **Locations:** real OIL sites (Moran, Baghjan, Duliajan, Kusijan…).
+
+**Labels are composed, never guessed.** The generator:
+1. picks a target SCL class;
+2. builds a scenario that yields exactly that class through the published decision table;
+3. only then renders text, with gold character spans that survive every typo and abbreviation.
+
+About **78% of records are deliberately hard**:
+
+| Family | What it is | Why it matters |
+|---|---|---|
+| `high_potential_no_outcome` | Fatal potential, nobody scratched | A severity model scores these ~0. They are the whole thesis. |
+| `visible_injury_low_potential` | Real injury, no fatal potential | A severity model over-ranks these. |
+| `underdetermined` | Two vague lines | The right answer is *"insufficient information"*. |
+| `controlled_high_energy` | High energy, barrier held | Must **not** be flagged, or the system cries wolf and gets switched off. |
+
+The split is 2,100 train / 450 validation / 450 test.
+
+---
+
+## 📈 The Precursor Accumulation Index
+
+One report is noise. **The same barrier failing again at the same place is the pattern that precedes a fatality.**
+
+The index scores each **site × energy source**:
+- Only precursors and real events count; controlled work adds nothing.
+- Each report fades with time (**45-day half-life**).
+- Reports are grouped by **barrier signature**: *which barrier, in what state*.
+- Repeats of the same signature grow **faster than linearly**, so four failures of one barrier outscore four failures of four different barriers. A test (`test_repetition_outscores_variety`) pins this.
+- Bands: *watch → elevated → high → critical*, with a rising/falling trend.
+
+Every score lists its contributing report IDs and weights, so an auditor can recompute it by hand. **Recommended Immediate Actions** are a plain, deterministic reading of this index: highest band, rising first, with the verb chosen by *how* the barrier failed (bypassed → audit override authorisations; absent → install and enforce; and so on).
+
+---
+
+## 🔌 The API
+
+FastAPI + SQLite. Interactive docs at **`/docs`** once the API is running.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Status, engine version, which extractor is live, report count |
+| `POST /api/analyze` | Score text **without saving** (powers the Sandbox) |
+| `POST /api/reports` | Save one report → extraction → rules → verdict |
+| `POST /api/reports/bulk` | CSV / JSONL import |
+| `POST /api/extract-text` | Pull text out of a PDF or .txt |
+| `GET /api/reports` | List with filters: class, rule, site, energy, dates, evidence |
+| `GET /api/reports/{id}` | Full detail, evidence spans and review history |
+| `PATCH /api/reports/{id}/review` | HSE **confirm / override** (append-only) |
+| `GET /api/triage` | Precursors only, ranked. Filter by site or Life-Saving Rule |
+| `GET /api/meta` | Sites, activities, vocabularies, versions |
+| `GET /api/analytics/density` | Precursor share per site × activity |
+| `GET /api/analytics/lsr` | Distribution over the nine Life-Saving Rules |
+| `GET /api/analytics/barriers` | Which barriers fail most, where, trending |
+| `GET /api/analytics/accumulation` | **Precursor Accumulation Index** |
+| `GET /api/ontology` | The full vocabulary the engine uses |
+| `GET /api/engine-metrics` | Measured benchmark + live reviewer agreement |
+
+**Reviews are append-only.** A confirm or override writes a *new* record; the engine's verdict is never edited or deleted. An auditor can always see what the system said before a human touched it.
+
+---
+
+## 🧠 The ML extraction layer (optional)
+
+The default extractor is a deterministic keyword lexicon built for Indian field vocabulary, and every number above comes from it.
+
+prahari also ships a complete pipeline for a neural extractor. It fine-tunes **MuRIL** (`google/muril-base-cased`) with **LoRA** to tag six span types, then merges, quantises to INT8 and exports to **ONNX** for CPU inference.
+
+```bash
+pip install -e ".[train]"
+python -m prahari.ml.training.prepare_data   # corpus → token-tagging dataset
+python -m prahari.ml.training.train_lora     # ~2 GPU-hours on a free Colab T4
+python -m prahari.ml.training.evaluate       # metrics + list of every missed precursor
+python -m prahari.ml.training.export_onnx    # → models/prahari.onnx
+```
+
+No GPU? Run [`notebooks/train_on_colab.ipynb`](./notebooks/train_on_colab.ipynb).&nbsp;[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adityacs50-lab/Antardrishti/blob/main/notebooks/train_on_colab.ipynb)
+
+Design choices:
+- **Recall first.** The decision threshold is 0.35, not 0.5, and a test fails the build below 90% entity recall. *A false positive costs one review; a false negative can cost a life.*
+- **It can only find facts.** Even with the model loaded, the rules still decide. The model's job is to catch unusual phrasing the lexicon misses.
+- **It fails safe.** A missing or broken model means a logged warning and an automatic fallback to the lexicon. The app header always says which path is live.
+
+---
+
+## 🔒 The offline guarantee
+
+The offline rule is enforced in code and tests:
+
+- **Tests** parse every runtime module and fail if anything network-capable is imported, and exercise every endpoint with network sockets disabled.
+- **`scripts/verify_offline.sh`** (`make verify`) checks four things:
+  - **A.** No runtime module imports anything network-capable.
+  - **B.** No runtime file or built UI bundle contains an external URL.
+  - **C.** Every model file matches its recorded checksum.
+  - **D.** The whole stack boots, seeds and classifies a report correctly **with outbound traffic pointed at a black hole**.
+- **The UI** uses system fonts, no CDN and no analytics. When the backend is unreachable it shows a loud *"Backend unreachable"* state. It **never** shows sample or fake verdicts.
+- The API prints a startup banner, and the header shows an **Air-gapped Engine** badge with the live extractor and ontology version.
+
+---
+
+## 🗂 Repository layout
+
+```text
+.
+├── README.md · JUDGES.md · DEMO.md · DEMO_SCRIPT_90s.md · DESIGN.md
+├── CLAUDE.md                    # non-negotiable architecture rules
+├── Makefile                     # setup · verify · demo · reset · test · doctor
+├── run_prahari_demo.bat         # Windows one-click launcher
+├── docs/
+│   ├── DOMAIN.md                # every safety definition, cited, in plain English
+│   └── screenshots/
+├── scripts/                     # verify_offline.sh · demo_windows.ps1 · launch/reset
+├── data/
+│   ├── synthetic_reports.jsonl  # the 3,000-report labelled corpus
+│   └── demo_seed.db             # pre-scored demo database
+├── backend/
+│   ├── prahari/
+│   │   ├── domain/              # safety science: pure data, decides nothing
+│   │   ├── ml/                  # fact extraction only, never a verdict
+│   │   │   └── training/        # MuRIL + LoRA → ONNX (build-time only)
+│   │   ├── rules/engine.py      # the 17 named rules: the only thing that decides
+│   │   ├── api/                 # FastAPI routes, analytics, ontology
+│   │   ├── evaluation/          # reproducible benchmark → engine_metrics.json
+│   │   ├── data/                # corpus generator with gold spans
+│   │   └── db/ · core/ · cli.py
+│   └── tests/                   # 361 tests
+├── web/src/                     # React + TypeScript control-room UI
+│   ├── views/                   # Triage · Sandbox · Report · Map · Rules · Ontology
+│   ├── components/
+│   └── data/demo-scenarios.json # the 4 sandbox scenarios (verified by backend tests)
+├── api/index.py                 # Vercel entry point
+├── notebooks/train_on_colab.ipynb
+└── docker/ · docker-compose.yml
+```
+
+---
+
+## ✅ Honest status & limitations
+
+**Built and verified:**
+- **Tests:** 361 backend tests pass. 13 more skip unless the optional ML packages (`onnx`, `onnxruntime`) and a trained model are installed.
+- **UI checks:** type-check and production build are clean. An automated browser walk-through covers every screen at desktop, tablet and phone sizes, plus the main flows: add report, confirm/override, bulk import, filters, export and the sandbox scenarios.
+- **Real-world transfer test:** the engine was run on **105,996 real US OSHA severe-injury reports**. That surfaced vocabulary gaps (e.g. *"hospitalized"*, *"fracturing"*), which were fixed in the injury lexicon without changing a single result on the OIL-style corpus.
+
+**Not done yet, stated plainly:**
+- **No real Oil India report has been scored.** The accuracy figures come from the synthetic corpus, and field text will need wider vocabulary.
+- **The neural extractor has not been trained** (no GPU yet). Every number here is from the keyword path. The ONNX runtime path is tested against a stub model.
+- **OSHA figure not re-measured.** The OSHA recall after the lexicon fix (44.1% → 77.1%) was measured on an earlier build and has not been re-run on this one.
+- **`docker compose up` has not been run end to end.**
+- **This is a prototype.** There is no authentication, user accounts or rate limiting, by design (see `CLAUDE.md`).
+
+A system that hides its gaps can't be trusted about anything else.
+
+---
+
+## ❓ FAQ
+
+<details>
+<summary><b>Is an AI model deciding whether something is a SIF?</b></summary>
+
+No. The NLP layer only finds facts in the text. Named, deterministic rules decide, and every verdict shows which rules fired and on which words.
+</details>
+
+<details>
+<summary><b>Does it need the internet or a GPU?</b></summary>
+
+No. Internet is needed only to install dependencies. Scoring a report takes about 2 ms on an ordinary CPU.
+</details>
+
+<details>
+<summary><b>What if the HSE officer disagrees?</b></summary>
+
+They click **Override**, pick the correct class and give a reason. The override is stored next to the engine's verdict, never over it, and the live *reviewer agreement* figure updates.
+</details>
+
+<details>
+<summary><b>Can it read Hindi or Assamese?</b></summary>
+
+Yes. The lexicon and corpus cover romanised Hindi, Devanagari, romanised Assamese and Assamese script, including sentences that mix them with English.
+</details>
+
+<details>
+<summary><b>How do I load our own reports?</b></summary>
+
+Use **Bulk Import** on the Triage Queue with a CSV or JSONL file. The required column is `text`; the optional ones are `site`, `date`, `activity` and `reporter_role`.
 </details>
 
 ---
 
-## The safety science, cited
+## 📚 Sources
 
-`backend/prahari/domain/` is **pure data and types — it decides nothing.**
-Every definition carries a citation, and anything prahari invented is tagged
-`PRAHARI_CHOICE` so it is visibly distinguishable from published literature.
-
-| Concept | Source |
-|---|---|
-| **Energy Wheel** — 10 hazardous-energy categories | EEI *Safety Classification &amp; Learning* model |
-| **1,500 J high-energy threshold** + 18 observable cues | EEI *High-Energy Control Assessment* |
-| **Direct control** — the verbatim three-part test | EEI HECA; Hallowell et al., *Prof. Safety J.* 2023 |
-| **SCL seven-class taxonomy** — HSIF / LSIF / PSIF / Capacity / Exposure / Success / Low-severity | EEI SCL |
-| **Nine Life-Saving Rules**, verbatim "I" statements | IOGP Report 459 |
-| Indian upstream &amp; pipeline vocabulary | OISD standards (7 cited) |
-
-Two details worth defending out loud:
-
-- **The literature contradicts itself on units.** The published cue list quotes
-  *500 ft-lb* (≈678 J) while the definition says *1,500 J*. We reproduce both
-  and say which we use, rather than quietly picking one.
-- **`PRESENT_UNVERIFIED` counts as non-protective.** EEI's limb (b) requires a
-  control be "installed, **verified**, and used properly." A control someone
-  believes is there is not a control. This cost us accuracy and is correct.
-
-[`docs/DOMAIN.md`](./docs/DOMAIN.md) explains all 672 lines of it in plain
-English, so it can be defended to a safety professional without a laptop.
-
----
-
-## The labelled corpus
-
-3,000 reports written the way Indian oilfield crews actually write them —
-terse, abbreviation-heavy (`PTW`, `LOTO`, `WAH`, `H2S`, `BOP`, `GGS`),
-typo-ridden, and code-mixed across **English, romanised Hindi, Devanagari,
-romanised Assamese and Assamese script**, across real OIL locations
-(Moran, Baghjan, Duliajan, Kusijan…).
-
-**Reports are composed, never read back.** The generator picks a target SCL
-class, builds a scenario spec that *yields exactly that class through the
-published decision table*, and only then renders text — with gold character
-spans that survive every noise injection. The labels are a property of the
-spec, so they cannot be wrong the way hand-annotation is wrong.
-
-Roughly **78% of records are deliberately adversarial**:
-
-| Family | What it is | Why it is there |
-|---|---|---|
-| `high_potential_no_outcome` | Fatal potential, nobody scratched | A severity model scores these ~0. They are the entire thesis. |
-| `visible_injury_low_potential` | Real injury, no fatal potential | A severity model over-ranks these. Exactly backwards. |
-| `underdetermined` | Two vague lines | The correct answer is *"insufficient information."* Labels are null. |
-| `controlled_high_energy` | High energy, barrier held | Must **not** flag, or the system cries wolf and gets switched off. |
-
----
-
-## The Precursor Accumulation Index
-
-The distinctive piece, and the third screen of the demo.
-
-It scores each **site × energy source** and rises when *the same barrier
-failure repeats at the same place* — because that repetition, not any single
-report, is the pattern that precedes an actual event.
-
-- Only precursors and real events contribute; controlled work adds nothing
-- Every contributor is exponentially time-decayed (**45-day half-life**)
-- Reports group by **barrier signature** = `(control, control_status)`
-- Each signature's decayed count is raised to an exponent **> 1**, so repeats
-  escalate super-linearly
-- The strongest signature dominates; unrelated failures are discounted
-
-> **Four failures of one barrier must outscore four failures of four
-> barriers.** Linear counting ties them, which inverts the whole claim — we
-> shipped that bug, then caught it by writing the assertion down as
-> `test_repetition_outscores_variety`.
-
-Every score returns its contributing report IDs and decayed weights, so an
-auditor can recompute it by hand.
-
----
-
-## The API
-
-FastAPI + SQLite. No auth (demo prototype). **No network calls anywhere** —
-one test parses every runtime module and fails the build if a network-capable
-import appears; another exercises every endpoint with `socket.socket`
-monkeypatched to raise.
-
-| Endpoint | What it does |
-|---|---|
-| `POST /api/reports` | Ingest one report → extraction → engine → verdict |
-| `POST /api/reports/bulk` | JSONL or CSV upload |
-| `GET /api/reports` | Paginated; filter by class, LSR, site, energy, dates, confidence |
-| `GET /api/reports/{id}` | Full detail with evidence spans for highlighting |
-| `GET /api/triage` | SIF potential only, ranked by triage rank then recency |
-| `GET /api/analytics/density` | Precursor density per site × activity |
-| `GET /api/analytics/lsr` | Distribution across the nine Life-Saving Rules |
-| `GET /api/analytics/barriers` | Which control fails most, where, trending |
-| `GET /api/analytics/accumulation` | **Precursor Accumulation Index** |
-| `PATCH /api/reports/{id}/review` | Human confirm/override |
-
-**Human-in-the-loop is append-only.** A review writes a *new row*; the verdict
-is never edited or deleted. An auditor can always see what the system said
-before a human touched it — and the gap between the two is the training signal
-for the next model.
-
----
-
-## The control-room UI
-
-`web/` — React + Vite + TypeScript, Tailwind, Recharts, shadcn-style
-primitives. Dark industrial palette, **validated with a CVD/contrast validator
-rather than eyeballed**.
-
-| View | What it proves |
-|---|---|
-| **Triage Queue** | The ranking is by potential, not consequence — plus a *Live Analysis* panel that runs pasted text through the real API |
-| **Report Detail** | Evidence spans highlighted inline beside the rule trace. This screen is the whole pitch: the system is auditable, not a black box. |
-| **Precursor Map** | Density heatmap + the Accumulation Index, with an alert banner |
-| **Life-Saving Rules** | Distribution across all nine, with per-rule barrier drill-down |
-
-Three things it deliberately does **not** do: run rule logic in the browser,
-fall back to mock data when the API is down (it shows a loud offline state
-instead), or fetch anything from the network — no CDN, no web fonts, no
-analytics.
-
----
-
-## The ML extraction layer
-
-MuRIL (`google/muril-base-cased`) fine-tuned with **LoRA** (r=16, α=32, attention
-projections) for **token classification** — tagging `ENERGY_SOURCE`,
-`MAGNITUDE_CUE`, `CONTROL_MENTION`, `CONTROL_NEGATION`, `ACTIVITY`, `LOCATION`.
-Merged, quantised to INT8, exported to ONNX, run on CPU.
-
-```bash
-pip install -e ".[train]"
-python -m prahari.ml.training.prepare_data   # corpus → BIO dataset
-python -m prahari.ml.training.train_lora     # ~2 GPU-hours on a Colab T4
-python -m prahari.ml.training.evaluate       # metrics + false-negative dossier
-python -m prahari.ml.training.export_onnx    # → models/prahari.onnx (INT8)
-```
-
-No GPU? The whole pipeline runs unattended on a free Colab T4:
-[**`notebooks/train_on_colab.ipynb`**](./notebooks/train_on_colab.ipynb)
-&nbsp;[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adityacs50-lab/Antardrishti/blob/main/notebooks/train_on_colab.ipynb)
-
-Three decisions worth knowing:
-
-- **Labels come from the generator, not the keyword extractor.** Training on
-  the keyword extractor's own matches would produce a model that can only ever
-  imitate it.
-- **The threshold favours recall (0.35, not 0.5)**, and the best checkpoint is
-  chosen on recall, not F1. *A false positive costs one HSE review; a false
-  negative costs a life.* `tests/ml/test_recall_floor.py` fails below 0.90.
-- **It fails closed.** Missing model, corrupt model, any inference error → a
-  logged warning and an automatic revert to the keyword extractor. The demo
-  cannot hard-fail.
-
----
-
-## Evaluation
-
-Held-out split, **keyword extraction path**, engine unchanged:
-
-| Split | Accuracy |
-|---|---|
-| **Test** (450 reports) | **83.3%** — 375/450 |
-| **Validation** (450 reports) | **84.4%** — 380/450 |
-
-Per class, where the failures actually are:
-
-| SCL class | Accuracy | |
-|---|---:|---|
-| HSIF | 100.0% | `██████████` |
-| Insufficient information | 96.4% | `█████████▋` |
-| Exposure | 95.6% | `█████████▌` |
-| LSIF | 92.0% | `█████████▏` |
-| Success | 85.1% | `████████▌` |
-| Low severity | 79.0% | `███████▉` |
-| PSIF | 75.0% | `███████▌` |
-| Capacity | 55.6% | `█████▌` |
-
-The `capacity` row is the honest weak spot: it requires recognising that a
-control *held under load*, which is the subtlest thing in the taxonomy and the
-rarest in the corpus.
-
-```
-344 passed, 3 skipped
-```
-
-The 3 skips are ONNX tests that unlock once a model is trained. The neural
-inference path is exercised in CI against a **stub ONNX graph**, so it is tested
-today rather than untested until someone opens Colab.
-
----
-
-## The offline guarantee
-
-The constraint is architectural, not aspirational. `scripts/verify_offline.sh`
-runs five sections:
-
-1. **Static ban-list** — greps the entire runtime for `openai`, `anthropic`,
-   `requests`, and any `http(s)://` literal that is not localhost. Fails loudly.
-2. **Model artefacts** — every file in `./models` present, with checksums.
-3. **Preflight** — interpreter, dependencies, ports, DB writability.
-4. **Live boot** — starts the full stack with outbound traffic pointed at a
-   black hole, POSTs a real report, asserts the correct verdict.
-5. **Teardown** — clean exit, no orphan processes.
-
-The API prints a **startup banner** and the UI shows a **badge** stating which
-extraction path is live (ONNX or keyword fallback), the engine version, and the
-report count — so nobody in the room has to take a claim on trust.
-
-[`DEMO.md`](./DEMO.md) is a 90-second runbook: exact click path, three reports
-in order, and the sentence to say at each step. Its every claim is pinned by
-`backend/tests/test_demo_contract.py`, so a lexicon change that would break the
-runbook fails the build instead of the demo.
-
----
-
-## Repository layout
-
-```
-prahari/
-├── CLAUDE.md                    # non-negotiable architecture rules
-├── DEMO.md                      # 90-second runbook, claims pinned by tests
-├── Makefile                     # setup · verify · demo · reset · doctor
-├── docs/DOMAIN.md               # every safety definition, cited, in plain English
-├── scripts/
-│   ├── verify_offline.sh        # the offline proof
-│   ├── reset_demo.sh            # known-good state in <10s
-│   └── launch_demo.sh
-├── backend/prahari/
-│   ├── domain/                  # safety science. Pure data. Decides nothing.
-│   ├── data/                    # corpus generator with gold spans
-│   ├── ml/                      # extraction only — NEVER a verdict
-│   │   └── training/            # prepare · LoRA · evaluate · ONNX export
-│   ├── rules/engine.py          # 17 named rules — the only thing that decides
-│   ├── api/                     # 12 endpoints
-│   ├── db/  core/  cli.py
-│   └── tests/                   # 344 tests
-└── web/src/                     # React control-room UI, four views
-```
-
----
-
-## Honest status
-
-Built and measured:
-
-| | |
-|---|---|
-| Backend | 9,984 lines |
-| Tests | 2,040 lines · **344 passing**, 3 skipped |
-| Frontend | 2,769 lines across 28 files |
-| Docs &amp; scripts | 1,849 lines |
-| End-to-end accuracy | 83.3% test / 84.2% validation |
-
-Not yet done, stated plainly because a system that hides its gaps cannot be
-trusted about anything else:
-
-- **LoRA training has never been run** — no GPU. Every number above comes from
-  the keyword extraction path. The ONNX runtime is tested against a stub graph.
-- **`docker compose up` has never been executed.** The compose file and
-  Dockerfiles exist and are wired; they are unverified.
-- **No real OIL report has ever passed through this.** The corpus is synthetic
-  by construction. Accuracy against field text is unknown, and the vocabulary
-  is the first thing that will need widening.
-- Production hardening — auth, rate limiting, upload caps, structured logging,
-  pagination on two analytics endpoints, frontend tests, CI — is not present.
-  This is a demo prototype, and `CLAUDE.md` says so.
-
----
-
-## Sources
-
-Edison Electric Institute, *Safety Classification &amp; Learning Model* ·
-EEI *High-Energy Control Assessment* ·
-Hallowell, Quashne, Salas, Jones &amp; MacLean, *Professional Safety Journal*, 2023 ·
-INGAA *High-Energy Hazard Control*, 2024 ·
-IOGP Report 459, *Life-Saving Rules* ·
-Oil Industry Safety Directorate (OISD) E&amp;P standards.
+- Edison Electric Institute, *Safety Classification & Learning (SCL) Model*
+- EEI, *High-Energy Control Assessment (HECA)*
+- Hallowell, Quashne, Salas, Jones & MacLean, *Professional Safety Journal*, 2023
+- INGAA, *High-Energy Hazard Control*, 2024
+- IOGP Report 459, *Life-Saving Rules*
+- Oil Industry Safety Directorate (OISD), E&P standards
 
 <div align="center">
-<sub>Built for Smart India Hackathon 2026 · PS 26165 · Oil India Limited</sub>
+<sub>प्रहरी · Built by Team Antardrishti for Smart India Hackathon 2026 · SIH26165 · Oil India Limited</sub>
 </div>
