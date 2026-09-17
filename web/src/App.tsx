@@ -6,6 +6,7 @@ import { SandboxView } from "@/views/SandboxView";
 import { ReportDetailView } from "@/views/ReportDetailView";
 import { PrecursorMapView } from "@/views/PrecursorMapView";
 import { LifeSavingRulesView } from "@/views/LifeSavingRulesView";
+import { OntologyView } from "@/views/OntologyView";
 
 const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: "reports/:id", element: <ReportDetailView /> },
       { path: "map", element: <PrecursorMapView /> },
       { path: "rules", element: <LifeSavingRulesView /> },
+      { path: "ontology", element: <OntologyView /> },
     ],
   },
 ]);

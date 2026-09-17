@@ -1,0 +1,230 @@
+{
+  "measured_at": "2026-09-17T14:04:31+00:00",
+  "engine_version": "engine-v0.1",
+  "extractor_version": "rule-v0.1",
+  "extractor_path": "keyword",
+  "corpus": {
+    "file": "synthetic_reports.jsonl",
+    "records": 3000,
+    "kind": "synthetic, gold-labelled by construction",
+    "note": "Generated OIL-style field reports with known labels. Real OIL reports have not been scored yet; expect lower numbers on them."
+  },
+  "headline_split": "test",
+  "splits": {
+    "test": {
+      "n": 450,
+      "precursor_detection": {
+        "precision": 0.8511,
+        "recall": 0.9756,
+        "f1": 0.9091,
+        "tp": 160,
+        "fp": 28,
+        "fn": 4,
+        "tn": 258
+      },
+      "sif_potential_detection": {
+        "precision": 0.879,
+        "recall": 0.9864,
+        "f1": 0.9296,
+        "tp": 218,
+        "fp": 30,
+        "fn": 3,
+        "tn": 199
+      },
+      "accuracy": {
+        "classification": 0.8333,
+        "energy_source": 0.6578,
+        "control_status": 0.62,
+        "injury_outcome": 0.8489,
+        "primary_lsr": 0.4467
+      },
+      "classification_macro_f1": 0.8467,
+      "per_class": {
+        "capacity": {
+          "precision": 1.0,
+          "recall": 0.5556,
+          "f1": 0.7143,
+          "tp": 25,
+          "fp": 0,
+          "fn": 20,
+          "tn": 405
+        },
+        "exposure": {
+          "precision": 0.625,
+          "recall": 0.9559,
+          "f1": 0.7558,
+          "tp": 65,
+          "fp": 39,
+          "fn": 3,
+          "tn": 343
+        },
+        "hsif": {
+          "precision": 0.8649,
+          "recall": 1.0,
+          "f1": 0.9275,
+          "tp": 32,
+          "fp": 5,
+          "fn": 0,
+          "tn": 413
+        },
+        "insufficient_information": {
+          "precision": 0.8571,
+          "recall": 0.9643,
+          "f1": 0.9076,
+          "tp": 54,
+          "fp": 9,
+          "fn": 2,
+          "tn": 385
+        },
+        "low_severity": {
+          "precision": 0.9846,
+          "recall": 0.7901,
+          "f1": 0.8767,
+          "tp": 64,
+          "fp": 1,
+          "fn": 17,
+          "tn": 368
+        },
+        "lsif": {
+          "precision": 1.0,
+          "recall": 0.92,
+          "f1": 0.9583,
+          "tp": 23,
+          "fp": 0,
+          "fn": 2,
+          "tn": 425
+        },
+        "psif": {
+          "precision": 0.8571,
+          "recall": 0.75,
+          "f1": 0.8,
+          "tp": 72,
+          "fp": 12,
+          "fn": 24,
+          "tn": 342
+        },
+        "success": {
+          "precision": 0.8163,
+          "recall": 0.8511,
+          "f1": 0.8333,
+          "tp": 40,
+          "fp": 9,
+          "fn": 7,
+          "tn": 394
+        }
+      },
+      "latency_ms": {
+        "mean": 1.886,
+        "p95": 2.623
+      }
+    },
+    "all": {
+      "n": 3000,
+      "precursor_detection": {
+        "precision": 0.8717,
+        "recall": 0.9652,
+        "f1": 0.9161,
+        "tp": 1053,
+        "fp": 155,
+        "fn": 38,
+        "tn": 1754
+      },
+      "sif_potential_detection": {
+        "precision": 0.9001,
+        "recall": 0.9796,
+        "f1": 0.9382,
+        "tp": 1441,
+        "fp": 160,
+        "fn": 30,
+        "tn": 1369
+      },
+      "accuracy": {
+        "classification": 0.846,
+        "energy_source": 0.6513,
+        "control_status": 0.626,
+        "injury_outcome": 0.8553,
+        "primary_lsr": 0.4723
+      },
+      "classification_macro_f1": 0.8626,
+      "per_class": {
+        "capacity": {
+          "precision": 0.9524,
+          "recall": 0.6645,
+          "f1": 0.7828,
+          "tp": 200,
+          "fp": 10,
+          "fn": 101,
+          "tn": 2689
+        },
+        "exposure": {
+          "precision": 0.6301,
+          "recall": 0.9535,
+          "f1": 0.7588,
+          "tp": 431,
+          "fp": 253,
+          "fn": 21,
+          "tn": 2295
+        },
+        "hsif": {
+          "precision": 0.903,
+          "recall": 1.0,
+          "f1": 0.949,
+          "tp": 214,
+          "fp": 23,
+          "fn": 0,
+          "tn": 2763
+        },
+        "insufficient_information": {
+          "precision": 0.8675,
+          "recall": 0.9524,
+          "f1": 0.9079,
+          "tp": 360,
+          "fp": 55,
+          "fn": 18,
+          "tn": 2567
+        },
+        "low_severity": {
+          "precision": 0.9932,
+          "recall": 0.8078,
+          "f1": 0.8909,
+          "tp": 437,
+          "fp": 3,
+          "fn": 104,
+          "tn": 2456
+        },
+        "lsif": {
+          "precision": 1.0,
+          "recall": 0.9398,
+          "f1": 0.9689,
+          "tp": 156,
+          "fp": 0,
+          "fn": 10,
+          "tn": 2834
+        },
+        "psif": {
+          "precision": 0.9046,
+          "recall": 0.7418,
+          "f1": 0.8151,
+          "tp": 474,
+          "fp": 50,
+          "fn": 165,
+          "tn": 2311
+        },
+        "success": {
+          "precision": 0.7964,
+          "recall": 0.8608,
+          "f1": 0.8274,
+          "tp": 266,
+          "fp": 68,
+          "fn": 43,
+          "tn": 2623
+        }
+      },
+      "latency_ms": {
+        "mean": 1.79,
+        "p95": 2.519
+      }
+    }
+  },
+  "reproduce": "PYTHONPATH=backend python -m prahari.evaluation.metrics"
+}

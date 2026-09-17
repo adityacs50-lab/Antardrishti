@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Loader2, Sparkles, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, Textarea } from "@/components/ui/input";
 import { ClassificationBadge, ConfidencePill, ControlBadge, LsrBadge } from "@/components/Chips";
 import { HighlightLegend, HighlightedReport } from "@/components/HighlightedReport";
 import { RuleTrace } from "@/components/RuleTrace";
+import { HybridEnginePanel } from "@/components/HybridEnginePanel";
 import { OfflineState } from "@/components/StateViews";
 import { api, ApiError } from "@/lib/api";
 import { ENERGY_LABEL } from "@/lib/format";
-import type { AnalyzeResult } from "@/types/api";
+import { cn } from "@/lib/utils";
+import { CLASSIFICATION_TONE } from "@/lib/theme";
+import type { AnalyzeResult, SifClassification } from "@/types/api";
+import DEMO_SCENARIOS from "@/data/demo-scenarios.json";
 
-/** Three reports chosen to show the range, including a code-mixed one. */
 /**
  * The three demo reports, in the order DEMO.md presents them.
  *
@@ -54,6 +57,26 @@ const EXAMPLES: { id: string; label: string; note: string; text: string }[] = [
   },
 ];
 
+/**
+ * The four one-click judging scenarios. Their text lives in
+ * `src/data/demo-scenarios.json`, which `backend/tests/test_demo_scenarios.py`
+ * reads too — so each button's declared verdict is verified by the test suite
+ * against exactly the text shown here.
+ */
+const SCENARIOS = DEMO_SCENARIOS as {
+  id: string;
+  short: string;
+  label: string;
+  note: string;
+  text: string;
+  expect: { classification: SifClassification };
+}[];
+
+const ALL_PRESETS = [
+  ...EXAMPLES,
+  ...SCENARIOS.map(({ id, label, note, text }) => ({ id, label, note, text })),
+];
+
 export function LiveAnalysisPanel() {
   const [text, setText] = useState(EXAMPLES[0].text);
   const [selected, setSelected] = useState(EXAMPLES[0].id);
@@ -93,13 +116,18 @@ export function LiveAnalysisPanel() {
   }, [text, run]);
 
   const pick = (id: string) => {
-    const example = EXAMPLES.find((e) => e.id === id);
+    const example = ALL_PRESETS.find((e) => e.id === id);
     if (!example) return;
     setSelected(id);
     setText(example.text);
+    // A preset is a deliberate choice, not typing: analyse it now rather than
+    // after the typing debounce. The effect below still fires, and its
+    // identical request simply lands second.
+    window.clearTimeout(debounce.current);
+    void run(example.text);
   };
 
-  const note = EXAMPLES.find((e) => e.id === selected)?.note;
+  const note = ALL_PRESETS.find((e) => e.id === selected)?.note;
 
   return (
     <Card>
@@ -118,6 +146,36 @@ export function LiveAnalysisPanel() {
       </CardHeader>
 
       <CardContent className="space-y-3">
+        <div className="space-y-1.5">
+          <p className="inline-flex items-center gap-1.5 text-2xs uppercase tracking-wide text-ink-faint">
+            <Zap className="size-3" /> Demo scenarios · one click loads and analyses
+          </p>
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {SCENARIOS.map((s) => {
+              const tone = CLASSIFICATION_TONE[s.expect.classification];
+              const active = selected === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => pick(s.id)}
+                  aria-pressed={active}
+                  className={cn(
+                    "group flex flex-col items-start gap-1 border px-3 py-2 text-left transition-all duration-150 hover:-translate-y-px hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40",
+                    active ? "border-accent bg-surface-raised" : "border-line bg-surface-sunken",
+                  )}
+                >
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink">
+                    <span className="size-1.5 rounded-full" style={{ backgroundColor: tone.fg }} aria-hidden />
+                    {s.short}
+                  </span>
+                  <span className="line-clamp-2 text-2xs leading-snug text-ink-faint">{s.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Select
             aria-label="Example report"
@@ -125,9 +183,17 @@ export function LiveAnalysisPanel() {
             onChange={(e) => pick(e.target.value)}
             className="max-w-sm flex-1"
           >
-            {EXAMPLES.map((e) => (
-              <option key={e.id} value={e.id}>{e.label}</option>
-            ))}
+            {selected === "" && <option value="">Custom text</option>}
+            <optgroup label="DEMO.md runbook">
+              {EXAMPLES.map((e) => (
+                <option key={e.id} value={e.id}>{e.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Demo scenarios">
+              {SCENARIOS.map((e) => (
+                <option key={e.id} value={e.id}>{e.short} · {e.label}</option>
+              ))}
+            </optgroup>
           </Select>
           <Button
             variant="ghost"
@@ -142,7 +208,7 @@ export function LiveAnalysisPanel() {
 
         <Textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); if (selected) setSelected(""); }}
           rows={6}
           spellCheck={false}
           placeholder="Paste an unsafe-act, unsafe-condition or near-miss report…"
@@ -171,6 +237,8 @@ export function LiveAnalysisPanel() {
             </div>
 
             <p className="text-xs leading-relaxed text-ink-muted">{result.reason}</p>
+
+            <HybridEnginePanel verdict={result.verdict} spans={result.evidence_spans} />
 
             <div className="rounded-md border border-line bg-surface-sunken p-3">
               <HighlightLegend className="mb-2.5" />

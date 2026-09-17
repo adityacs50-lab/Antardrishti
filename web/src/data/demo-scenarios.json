@@ -1,0 +1,54 @@
+[
+  {
+    "id": "scn-psif",
+    "short": "Clear Potential SIF",
+    "label": "Relief valve bypassed, flange blew out (OCS-3)",
+    "note": "High-energy pressure release with a deliberately bypassed barrier. Nobody hurt, but the fatal potential was real.",
+    "expect": {
+      "classification": "psif",
+      "energy_source": "pressure",
+      "control_status": "bypassed",
+      "primary_lsr": "bypassing_safety_controls"
+    },
+    "text": "On 11.09.2026 at abt 1030 hrs at OCS-3 Duliajan, the relief valve on the pressurised line to the separator had been bypassed by the operator to keep production running. Pressure kept building and the flange joint blew out, and gas released near two workers standing in the line of fire. No injury to any personnel. Well shut in and area cordoned off."
+  },
+  {
+    "id": "scn-borderline",
+    "short": "Borderline",
+    "label": "Harness worn on rig floor, never verified",
+    "note": "A harness is mentioned but nobody checked it. Read at face value this looks safe. The engine flags it because an unverified control is not a control yet.",
+    "expect": {
+      "classification": "exposure",
+      "energy_source": "gravity",
+      "control_status": "present_unverified",
+      "primary_lsr": "working_at_height"
+    },
+    "text": "During the morning round at Well No. 88, Naharkatiya, a contract worker was seen working on the rig floor. Harness was worn. Supervisor advised him and the matter was discussed in the toolbox talk."
+  },
+  {
+    "id": "scn-low",
+    "short": "Low severity",
+    "label": "Slip in the canteen, bruised knee",
+    "note": "A real but minor injury with no high-energy source. It should score low, and it does.",
+    "expect": {
+      "classification": "low_severity",
+      "energy_source": null,
+      "control_status": "absent",
+      "primary_lsr": null
+    },
+    "text": "While walking to the canteen at Duliajan field HQ, Sri P. Bora (clerk) slipped on a wet floor and bruised his knee. First aid was given and he resumed duty."
+  },
+  {
+    "id": "scn-multirule",
+    "short": "Multi-rule · Hinglish",
+    "label": "Hot work at height, no permit, no gas test (Moran)",
+    "note": "Hindi-English field writing that touches several Life-Saving Rules: hot work, energy isolation and work authorisation.",
+    "expect": {
+      "classification": "psif",
+      "energy_source": "temperature",
+      "control_status": "absent",
+      "primary_lsr": "hot_work"
+    },
+    "text": "Tank farm Moran pe hot work chal raha tha, welding job at 6 mtr height on the tank roof. Hot work permit nahi liya gaya tha aur gas test nahi kiya. Welder ne safety harness pehna tha lekin tie off nahi kiya. Fire watch bhi nahi tha. Spark gira aur drain ke paas oily rag caught fire, extinguisher se bujhayi. Koi injury nahi hui."
+  }
+]
