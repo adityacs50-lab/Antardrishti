@@ -8,7 +8,9 @@
     "studio": "remotion studio",
     "render": "remotion render src/index.ts PrahariDemo out/prahari-demo.mp4 --no-sandbox --concurrency=4 --crf=17",
     "encode": "node scripts/encode.mjs",
-    "build": "npm run render && npm run encode"
+    "voiceover": "python3 scripts/voiceover.py",
+    "build": "npm run render && npm run voiceover",
+    "build:silent": "npm run render && npm run encode"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",

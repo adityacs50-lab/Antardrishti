@@ -61,8 +61,13 @@ screenshots/
 # README images are committed on purpose.
 !docs/screenshots/
 
-# Remotion render output (regenerate with: cd demo-video && npm run render)
+# Remotion render output (regenerate with: cd demo-video && npm run build)
 demo-video/out/
+
+# Piper voice model for the demo narration: ~120 MB, and its licence does not
+# travel with this repo. Fetch it with the command in
+# demo-video/scripts/voiceover.py before running `npm run voiceover`.
+demo-video/voices/
 
 # Scratch/export folder from a Claude session, not project source
 Claude outputs/

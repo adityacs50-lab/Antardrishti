@@ -27,19 +27,25 @@ Open [`slideshow.html`](./slideshow.html) in a browser for a click-through walkt
 
 Judge video is rendered with [Remotion](https://github.com/remotion-dev/remotion):
 
-- File: **`prahari-sih26165-demo.mp4`** (this folder) — 96 s, 1080p, no audio track
+- File: **`prahari-sih26165-demo.mp4`** (this folder) — 96 s, 1080p, narrated
 - Source project: [`../demo-video/`](../demo-video/)
 
 Every UI frame in it is a capture of the running app, taken by Playwright
 against a seeded `make demo` stack — not a mockup — and every figure on screen
-is read off the engine's own output. Rebuild with:
+is read off the engine's own output. The narration is synthesised offline with
+Piper from `../demo-video/narration.json`; the video is captioned throughout, so
+it still reads with the sound off. Rebuild with:
 
 ```bash
 make demo                              # repo root, in one terminal
-cd demo-video && npm install
+cd demo-video && npm install && pip install piper-tts
 npm run capture && npm run build       # in another
 cp out/prahari-sih26165-demo.mp4 ../demo/
 ```
+
+The narration voice is licensed **non-commercial** (CC BY-NC-SA 4.0). That
+covers this submission; see [`../demo-video/README.md`](../demo-video/README.md)
+for the one-line swap to a commercially usable voice.
 
 See [`../demo-video/README.md`](../demo-video/README.md) for the scene list and
 how the captures are framed and measured.

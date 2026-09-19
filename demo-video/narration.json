@@ -1,0 +1,102 @@
+{
+  "_comment": [
+    "Narration for the demo video, one cue per scene.",
+    "",
+    "`at` is the cue's start in seconds and must sit inside its scene's window,",
+    "which is set by the scene durations in src/PrahariDemo.tsx. If you retime a",
+    "scene there, retime the cue here — scripts/voiceover.py checks every cue",
+    "against `scene_start`/`scene_end` and refuses to build a track that drifts.",
+    "",
+    "Lines are written to be spoken, not read: short sentences, no acronyms the",
+    "synthesiser would spell out ('SIF', 'HSE', 'NLP'), and no numbers written as",
+    "digits where a word reads better. They track the on-screen captions closely",
+    "so the voice never contradicts the text under it."
+  ],
+  "voice": "en-us-ryan-high",
+  "cues": [
+    {
+      "scene": "open",
+      "scene_start": 0.0,
+      "scene_end": 6.0,
+      "at": 0.9,
+      "text": "Potential is not severity. Prahari finds the incidents that could have killed someone."
+    },
+    {
+      "scene": "problem",
+      "scene_start": 5.53,
+      "scene_end": 10.7,
+      "at": 6.1,
+      "text": "Safety systems rank what happened. The fatal ones give warning first."
+    },
+    {
+      "scene": "triage",
+      "scene_start": 10.23,
+      "scene_end": 20.23,
+      "at": 10.9,
+      "text": "Seven hundred field reports, ranked by what could have happened. A hundred and twenty carry fatal energy with no barrier. Measured, not claimed."
+    },
+    {
+      "scene": "trap",
+      "scene_start": 19.77,
+      "scene_end": 28.6,
+      "at": 20.6,
+      "text": "A slip in the canteen. A bruised knee. Every system tracks this one, and prahari ranks it low."
+    },
+    {
+      "scene": "psif",
+      "scene_start": 28.13,
+      "scene_end": 38.8,
+      "at": 29.0,
+      "text": "Now a relief valve, deliberately bypassed. The flange blew out. Nobody was hurt, so anywhere else this closes today. Prahari escalates it."
+    },
+    {
+      "scene": "hybrid",
+      "scene_start": 38.33,
+      "scene_end": 47.5,
+      "at": 39.1,
+      "text": "Hybrid, but not a black box. The model only extracts facts. Named rules decide. Same text, same verdict, every time."
+    },
+    {
+      "scene": "audit",
+      "scene_start": 47.03,
+      "scene_end": 57.03,
+      "at": 47.9,
+      "text": "Nine named rules fired. Each one cites a published standard, and the exact characters that triggered it. Auditable, without trusting the model."
+    },
+    {
+      "scene": "hinglish",
+      "scene_start": 56.57,
+      "scene_end": 65.73,
+      "at": 57.3,
+      "text": "Field reports are not written in clean English. This one is Hinglish, and the engine still finds eighteen spans of evidence."
+    },
+    {
+      "scene": "map",
+      "scene_start": 65.27,
+      "scene_end": 74.1,
+      "at": 66.0,
+      "text": "One report is noise. The same barrier failing at the same site is a pattern. At Moran, it failed six times."
+    },
+    {
+      "scene": "chart",
+      "scene_start": 73.63,
+      "scene_end": 81.97,
+      "at": 74.4,
+      "text": "The accumulation index rises when the same barrier keeps failing in the same place. That is a number a safety meeting can fund."
+    },
+    {
+      "scene": "ontology",
+      "scene_start": 81.5,
+      "scene_end": 88.67,
+      "at": 82.2,
+      "text": "Every term the engine reasons with is published, and served from the engine itself."
+    },
+    {
+      "scene": "close",
+      "scene_start": 88.2,
+      "scene_end": 96.37,
+      "at": 88.9,
+      "text": "Every verdict traces to a named rule, and the exact characters that fired it. And it runs completely offline."
+    }
+  ]
+}
