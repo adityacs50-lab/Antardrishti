@@ -27,7 +27,21 @@ Open [`slideshow.html`](./slideshow.html) in a browser for a click-through walkt
 
 Judge video is rendered with [Remotion](https://github.com/remotion-dev/remotion):
 
-- File: **`prahari-sih26165-demo.mp4`** (this folder)
-- Source project: [`../demo-video/`](../demo-video/) — `npm run render`
+- File: **`prahari-sih26165-demo.mp4`** (this folder) — 96 s, 1080p, no audio track
+- Source project: [`../demo-video/`](../demo-video/)
 
-Re-record live UI with OBS if judges want a real click-through; Remotion covers the narrative walkthrough from verified screenshots.
+Every UI frame in it is a capture of the running app, taken by Playwright
+against a seeded `make demo` stack — not a mockup — and every figure on screen
+is read off the engine's own output. Rebuild with:
+
+```bash
+make demo                              # repo root, in one terminal
+cd demo-video && npm install
+npm run capture && npm run build       # in another
+cp out/prahari-sih26165-demo.mp4 ../demo/
+```
+
+See [`../demo-video/README.md`](../demo-video/README.md) for the scene list and
+how the captures are framed and measured.
+
+Re-record live UI with OBS if judges want an unscripted click-through.
