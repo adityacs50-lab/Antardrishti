@@ -2,15 +2,20 @@
   "name": "prahari-demo-video",
   "version": "1.0.0",
   "private": true,
-  "description": "SIH26165 judge demo video — Remotion",
+  "description": "SIH26165 judge demo video — Remotion, built from real captures of the running app",
   "scripts": {
+    "capture": "node capture.mjs",
     "studio": "remotion studio",
-    "render": "remotion render src/index.ts PrahariDemo out/prahari-sih26165-demo.mp4",
-    "render:fast": "remotion render src/index.ts PrahariDemo out/prahari-sih26165-demo.mp4 --concurrency=4"
+    "render": "remotion render src/index.ts PrahariDemo out/prahari-demo.mp4 --no-sandbox --concurrency=4 --crf=17",
+    "encode": "node scripts/encode.mjs",
+    "build": "npm run render && npm run encode"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
     "@remotion/cli": "^4.0.286",
     "@remotion/renderer": "^4.0.286",
+    "playwright-core": "^1.63.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "remotion": "^4.0.286"
