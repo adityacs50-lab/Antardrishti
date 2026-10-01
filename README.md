@@ -1,31 +1,48 @@
 <div align="center">
 
-# प्रहरी · prahari
+<img src="docs/assets/hero.svg" alt="prahari — Most safety systems rank what happened. prahari ranks what almost did." width="100%" />
 
-### Most safety systems rank what happened. prahari ranks what almost did.
+<br/>
 
-**prahari** (Hindi for *sentinel*) reads oil & gas safety reports and flags the ones that could have killed someone, even when nobody was hurt.
-
+**prahari** (Hindi for *sentinel*) reads oil & gas safety reports and flags the ones that could have killed someone, **even when nobody was hurt**.<br/>
 It runs **100% offline**, and every verdict comes with the exact rules and words that produced it.
 
-Built by **Team Antardrishti** for **Smart India Hackathon 2026**, problem statement **SIH26165**: *AI/NLP engine to detect SIF precursors*, set by **Oil India Limited**.
+<br/>
 
-[![Offline](https://img.shields.io/badge/network-100%25%20offline-0ca30c?style=flat-square)](#-the-offline-guarantee)
-[![Tests](https://img.shields.io/badge/backend%20tests-361%20passing-0ca30c?style=flat-square)](#-results)
-[![Recall](https://img.shields.io/badge/precursor%20recall-97.6%25-d95926?style=flat-square)](#-results)
-[![F1](https://img.shields.io/badge/precursor%20F1-90.9%25-3987e5?style=flat-square)](#-results)
-[![Explainable](https://img.shields.io/badge/verdicts-100%25%20rule--traced-d95926?style=flat-square)](#-how-it-works)
-[![Stack](https://img.shields.io/badge/FastAPI%20%C2%B7%20React%20%C2%B7%20TypeScript-3987e5?style=flat-square)](#-quickstart)
+[![Offline](https://img.shields.io/badge/network-100%25_offline-0ca30c?style=for-the-badge&labelColor=161616)](#-the-offline-guarantee)
+[![Recall](https://img.shields.io/badge/precursor_recall-97.6%25-d95926?style=for-the-badge&labelColor=161616)](#-results)
+[![F1](https://img.shields.io/badge/precursor_F1-90.9%25-4589ff?style=for-the-badge&labelColor=161616)](#-results)
+[![Tests](https://img.shields.io/badge/tests-361_passing-0ca30c?style=for-the-badge&labelColor=161616)](#-honest-status--limitations)
 
-[What it is](#-what-prahari-is-in-60-seconds) ·
-[The problem](#-the-problem-severity--potential) ·
-[Features](#-what-you-can-do-with-it) ·
-[How it works](#-how-it-works) ·
-[Results](#-results) ·
-[Quickstart](#-quickstart) ·
-[Limitations](#-honest-status--limitations)
+[![Python](https://img.shields.io/badge/Python_3.11-3776AB?style=flat-square&logo=python&logoColor=white)](#-quickstart)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](#-the-api)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)](#-the-api)
+[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)](#-what-you-can-do-with-it)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](#-what-you-can-do-with-it)
+[![Tailwind](https://img.shields.io/badge/Tailwind-0F172A?style=flat-square&logo=tailwindcss&logoColor=38BDF8)](#-what-you-can-do-with-it)
+[![ONNX](https://img.shields.io/badge/ONNX_Runtime-005CED?style=flat-square&logo=onnx&logoColor=white)](#-the-ml-extraction-layer-optional)
+[![Hugging Face](https://img.shields.io/badge/MuRIL_+_LoRA-FFD21E?style=flat-square&logo=huggingface&logoColor=black)](#-the-ml-extraction-layer-optional)
 
-<img src="docs/screenshots/01-triage-queue.png" alt="prahari Triage Queue" width="900" />
+<br/>
+
+<b>
+<a href="#-what-prahari-is-in-60-seconds">Overview</a> &nbsp;·&nbsp;
+<a href="#-the-problem-severity--potential">The problem</a> &nbsp;·&nbsp;
+<a href="#-see-it-in-action">Demo</a> &nbsp;·&nbsp;
+<a href="#-how-it-works">How it works</a> &nbsp;·&nbsp;
+<a href="#-results">Results</a> &nbsp;·&nbsp;
+<a href="#-quickstart">Quickstart</a> &nbsp;·&nbsp;
+<a href="#-the-api">API</a> &nbsp;·&nbsp;
+<a href="#-honest-status--limitations">Limitations</a>
+</b>
+
+<br/><br/>
+
+<img src="docs/assets/metrics.svg" alt="97.6% precursor recall · 90.9% F1 · 1.9 ms per report · 17 named rules · 0 network calls" width="100%" />
+
+<br/><br/>
+
+<sub>Built by <b>Team Antardrishti</b> for <b>Smart India Hackathon 2026</b> · Problem statement <b>SIH26165</b>: <i>AI/NLP engine to detect SIF precursors</i> · set by <b>Oil India Limited</b></sub>
 
 </div>
 
@@ -41,6 +58,20 @@ Built by **Team Antardrishti** for **Smart India Hackathon 2026**, problem state
 | **Why you can trust it** | An NLP layer only **finds facts** in the text. A **deterministic rule engine** makes every decision. Each verdict lists the named rules that fired and highlights the exact words they used. There is no black-box score. |
 | **Where it runs** | Entirely on a laptop or a site server with **no internet**: no cloud APIs, no LLM calls, no CDN. It works in field conditions and air-gapped control rooms. |
 | **Languages** | English, romanised Hindi, Devanagari, romanised Assamese and Assamese script, including code-mixed field writing such as *"Hot work permit nahi liya gaya tha"*. |
+
+---
+
+## 🎬 See it in action
+
+<div align="center">
+
+<a href="demo/prahari-sih26165-demo.mp4">
+  <img src="docs/screenshots/01-triage-queue.png" alt="prahari Triage Queue — click to watch the demo video" width="92%" />
+</a>
+
+<sub>▶ <a href="demo/prahari-sih26165-demo.mp4"><b>Watch the demo video</b></a> &nbsp;·&nbsp; the Triage Queue: every SIF precursor, ranked by fatal potential</sub>
+
+</div>
 
 ---
 
@@ -391,6 +422,9 @@ Every score lists its contributing report IDs and weights, so an auditor can rec
 
 FastAPI + SQLite. Interactive docs at **`/docs`** once the API is running.
 
+<details>
+<summary><b>All endpoints</b></summary>
+
 | Endpoint | Purpose |
 |---|---|
 | `GET /health` | Status, engine version, which extractor is live, report count |
@@ -409,6 +443,8 @@ FastAPI + SQLite. Interactive docs at **`/docs`** once the API is running.
 | `GET /api/analytics/accumulation` | **Precursor Accumulation Index** |
 | `GET /api/ontology` | The full vocabulary the engine uses |
 | `GET /api/engine-metrics` | Measured benchmark + live reviewer agreement |
+
+</details>
 
 **Reviews are append-only.** A confirm or override writes a *new* record; the engine's verdict is never edited or deleted. An auditor can always see what the system said before a human touched it.
 
@@ -454,6 +490,9 @@ The offline rule is enforced in code and tests:
 
 ## 🗂 Repository layout
 
+<details>
+<summary><b>Show the tree</b></summary>
+
 ```text
 .
 ├── README.md · JUDGES.md · DEMO.md · DEMO_SCRIPT_90s.md · DESIGN.md
@@ -486,6 +525,8 @@ The offline rule is enforced in code and tests:
 ├── notebooks/train_on_colab.ipynb
 └── docker/ · docker-compose.yml
 ```
+
+</details>
 
 ---
 
@@ -550,6 +591,25 @@ Use **Bulk Import** on the Triage Queue with a CSV or JSONL file. The required c
 - IOGP Report 459, *Life-Saving Rules*
 - Oil Industry Safety Directorate (OISD), E&P standards
 
+---
+
+## 👥 Team Antardrishti
+
+prahari is built by **Team Antardrishti** (*inner sight*) for Smart India Hackathon 2026.
+
+| | |
+|---|---|
+| **Maintainer** | **Aditya Shinde** · BTech AI & ML, MGM University, Chhatrapati Sambhajinagar · [LinkedIn](https://www.linkedin.com/in/aditya-shinde-ai/) · [GitHub](https://github.com/adityacs50-lab) |
+| **Problem statement** | SIH26165, *AI/NLP engine to detect SIF precursors*, Oil India Limited |
+
+If prahari is useful to you, a ⭐ helps more people find it.
+
+<br/>
+
 <div align="center">
-<sub>प्रहरी · Built by Team Antardrishti for Smart India Hackathon 2026 · SIH26165 · Oil India Limited</sub>
+
+<img src="https://img.shields.io/badge/%E0%A4%AA%E0%A5%8D%E0%A4%B0%E0%A4%B9%E0%A4%B0%E0%A5%80-the_sentinel_never_sleeps-0f62fe?style=for-the-badge&labelColor=161616" alt="प्रहरी — the sentinel never sleeps" />
+
+<sub>Built for the people who come home because a near miss was taken seriously.</sub>
+
 </div>
